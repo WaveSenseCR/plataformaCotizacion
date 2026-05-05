@@ -1140,7 +1140,7 @@
       </div>
       <hr class="divider" style="margin:0.6rem 0">
       <div class="total-row">
-        <span class="total-label">Subtotal</span>
+        <span class="total-label">Subtotal (hardware)</span>
         <span class="total-value" id="sum-subtotal">$0.00</span>
       </div>
       <div class="total-row">
@@ -2583,7 +2583,6 @@ function buildPDFDoc() {
   if(vtQty2>0) prows.push(['Transductor de voltaje (1 nivel c/u)',String(vtQty2),fmtN(cfg.vtPrice,sym),fmtN(vtc2,sym)]);
   if(ctQty2>0) prows.push(['Transductor de corriente (3 polos)',String(ctQty2),fmtN(cfg.ctPrice,sym),fmtN(ctc2,sym)]);
   if(state.digitalOutputs>0) prows.push(['Salida digital (rel\u00E9)',String(state.digitalOutputs),fmtN(cfg.doPrice,sym),fmtN(dc2,sym)]);
-  if(cfg.serviceRate>0) prows.push(['Configuraci\u00F3n de plataforma ('+cfg.serviceRate+'%)', '—', '—', fmtN(svc2,sym)]);
 
   // Table header
   y = pageCheck(y, 7);
@@ -2607,20 +2606,43 @@ function buildPDFDoc() {
   });
   y+=4;
 
-  // Totals box
-  y = pageCheck(y, 36);
+  // Totals box — 4 lines: Subtotal (hardware) + Config fee + IVA + TOTAL
+  var totBoxH = cfg.serviceRate > 0 ? 46 : 36;
+  y = pageCheck(y, totBoxH + 4);
   var tx=M+CW*0.5, tw=CW*0.5;
-  fc(ROW1); doc.roundedRect(tx,y,tw,36,2,2,'F');
-  dc(ACC); doc.setLineWidth(0.3); doc.roundedRect(tx,y,tw,36,2,2,'S');
-  tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text('Subtotal:',tx+5,y+8);
-  tc(LG); doc.setFont('helvetica','bold'); doc.text(fmtN(sub,sym),tx+tw-5,y+8,{align:'right'});
-  tc(MG); doc.setFont('helvetica','normal'); doc.text('IVA ('+cfg.iva+'%):',tx+5,y+16);
-  tc(LG); doc.setFont('helvetica','bold'); doc.text(fmtN(iva2,sym),tx+tw-5,y+16,{align:'right'});
-  dc(BRD); doc.setLineWidth(0.4); doc.line(tx+4,y+21,tx+tw-4,y+21);
+  fc(ROW1); doc.roundedRect(tx,y,tw,totBoxH,2,2,'F');
+  dc(ACC); doc.setLineWidth(0.3); doc.roundedRect(tx,y,tw,totBoxH,2,2,'S');
+
+  var lineY = y + 9;
+  tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(8);
+  doc.text('Subtotal (hardware):',tx+5,lineY);
+  tc(LG); doc.setFont('helvetica','bold');
+  doc.text(fmtN(sub,sym),tx+tw-5,lineY,{align:'right'});
+  lineY += 8;
+
+  if (cfg.serviceRate > 0) {
+    tc(MG); doc.setFont('helvetica','normal');
+    doc.text('Config. plataforma ('+cfg.serviceRate+'%):',tx+5,lineY);
+    tc(LG); doc.setFont('helvetica','bold');
+    doc.text(fmtN(svc2,sym),tx+tw-5,lineY,{align:'right'});
+    lineY += 8;
+  }
+
+  tc(MG); doc.setFont('helvetica','normal');
+  doc.text('IVA ('+cfg.iva+'%):',tx+5,lineY);
+  tc(LG); doc.setFont('helvetica','bold');
+  doc.text(fmtN(iva2,sym),tx+tw-5,lineY,{align:'right'});
+  lineY += 5;
+
+  dc(BRD); doc.setLineWidth(0.4);
+  doc.line(tx+4,lineY,tx+tw-4,lineY);
+  lineY += 8;
+
   tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(10);
-  doc.text('TOTAL:',tx+5,y+30);
-  doc.text(fmtN(tot,sym),tx+tw-5,y+30,{align:'right'});
-  y+=40;
+  doc.text('TOTAL:',tx+5,lineY);
+  doc.text(fmtN(tot,sym),tx+tw-5,lineY,{align:'right'});
+
+  y += totBoxH + 4;
 
   // Notes
   y = pageCheck(y, 26);
