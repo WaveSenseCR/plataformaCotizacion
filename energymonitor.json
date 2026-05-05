@@ -1,0 +1,27 @@
+{
+  "lockSettings": true,
+  "prices": {
+    "basePrice": 700,
+    "modulePrice": 80,
+    "chipPrice": 15,
+    "doPrice": 20,
+    "ctPrice": 60,
+    "vtPrice": 60,
+    "iva": 13,
+    "currency": "$"
+  },
+  "company": {
+    "name": "WaveSense Electronics",
+    "cedula": "3-000-0000",
+    "phone": "+506 6395 0418 / 8631 4323",
+    "email": "contacto@correo.com"
+  },
+  "pdfColors": {
+    "accent": "#00d4ff",
+    "dark": "#0a0e14",
+    "secondary": "#1e3250",
+    "text": "#dce4f0",
+    "row1": "#0d1422",
+    "row2": "#111a28"
+  }
+}
