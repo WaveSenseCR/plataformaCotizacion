@@ -823,7 +823,7 @@
   <div class="header-actions">
     <button class="btn btn-outline" onclick="openClient()">👤 Cliente</button>
     <button class="btn btn-outline" onclick="openPanelDim()">📐 Dimensiones</button>
-    <button class="btn btn-outline" onclick="openSettings()">⚙ Ajustes</button>
+    <button id="btn-settings" class="btn btn-outline" onclick="openSettings()">⚙ Ajustes</button>
     <button class="btn btn-success" onclick="openPreview()">📄 Vista Previa PDF</button>
   </div>
 </header>
@@ -1195,7 +1195,7 @@
 
 <!-- PANEL DIMENSIONS MODAL -->
 <div class="modal-overlay" id="panel-dim-modal">
-  <div class="modal" style="max-width:900px;width:96%;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.6),0 0 40px rgba(0,212,255,0.06);width:96vw;max-width:96vw;max-height:92vh;padding:0;display:flex;flex-direction:column;overflow:hidden;">
 
     <!-- Header -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:var(--bg2);border-bottom:1px solid var(--border2);flex-shrink:0;">
@@ -1236,7 +1236,7 @@
     <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1.25rem;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;">
       <span style="font-size:0.72rem;color:var(--text3);letter-spacing:1px;text-transform:uppercase;font-family:var(--head);">Zoom</span>
       <button onclick="panelZoom(-0.15)" class="counter-btn" style="font-size:1rem;font-weight:700;">−</button>
-      <input type="range" id="panel-zoom-slider" min="0.2" max="3" step="0.05" value="1"
+      <input type="range" id="panel-zoom-slider" min="0.05" max="3" step="0.05" value="1"
         oninput="el('panel-zoom-pct').textContent=Math.round(this.value*100)+'%'; applyPanelZoom()"
         style="flex:1;max-width:220px;accent-color:var(--accent);">
       <span id="panel-zoom-pct" style="font-family:var(--mono);font-size:0.82rem;color:var(--accent);min-width:42px;">100%</span>
@@ -1246,10 +1246,12 @@
     </div>
 
     <!-- SVG canvas — scrollable -->
-    <div id="panel-dim-scroll" style="flex:1;overflow:auto;background:var(--bg);padding:1.25rem;min-height:300px;cursor:grab;">
-      <div id="panel-dim-zoom-wrap" style="transform-origin:top left;display:inline-block;">
-        <div id="panel-dim-svg-wrap"></div>
+    <div id="panel-dim-scroll" style="flex:1;overflow:auto;background:var(--bg);padding:1.25rem;min-height:300px;cursor:grab;border-radius:0;">
+      <div id="panel-dim-zoom-wrap" style="position:relative;transform-origin:top left;flex-shrink:0;">
+        <div id="panel-dim-svg-wrap" style="display:block;line-height:0;position:absolute;top:0;left:0;"></div>
       </div>
+      <!-- spacer that tells the scroll container how big the zoomed content is -->
+      <div id="panel-dim-spacer" style="display:block;flex-shrink:0;pointer-events:none;"></div>
     </div>
 
     <!-- Summary bar -->
@@ -1455,6 +1457,10 @@
       <button class="btn btn-outline btn-sm" onclick="exportSettingsJson()" title="Descarga un archivo energymonitor.json con los ajustes actuales para alojar en GitHub Pages">
         ⬇ Exportar como .json
       </button>
+      <button class="btn btn-outline btn-sm" onclick="el('import-json-input').click()" title="Carga ajustes desde un archivo energymonitor.json local">
+        ⬆ Importar desde .json
+      </button>
+      <input type="file" id="import-json-input" accept=".json,application/json" style="display:none" onchange="importSettingsJson(this)">
       <div style="display:flex;gap:0.75rem;">
         <button class="btn btn-outline" onclick="closeSettings()">Cancelar</button>
         <button class="btn btn-primary" onclick="saveSettings()">✓ Guardar Ajustes</button>
@@ -1554,6 +1560,10 @@ function applyJsonConfig(d) {
         setVal('cfg-pdf-' + k + '-hex', d.pdfColors[k]);
       }
     });
+  }
+  if (d.lockSettings === true) {
+    var btn = el('btn-settings');
+    if (btn) btn.style.display = 'none';
   }
   if (d.appTitle && el('header-title-text')) {
     el('header-title-text').textContent = d.appTitle;
@@ -1963,9 +1973,30 @@ function saveSettings() {
   closeSettings();
 }
 
+function importSettingsJson(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      applyJsonConfig(data);
+      loadCfg();
+      updateSidebar();
+      updatePdfPreview();
+      showJsonBanner('✓ Ajustes importados desde ' + file.name, true);
+    } catch(err) {
+      showJsonBanner('✗ Error al leer el archivo: ' + err.message, false);
+    }
+    // Reset so the same file can be re-imported if needed
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
 function exportSettingsJson() {
   loadCfg();
   var data = {
+    lockSettings: false,
     prices: {
       basePrice:   cfg.basePrice,
       modulePrice: cfg.modulePrice,
@@ -2572,8 +2603,6 @@ function renderPanelDiagram() {
   var CTH = DH * 0.55;
   var VTH = DH * 0.65;
 
-  // Scale: fit everything into ~800px wide canvas
-  var SCALE_BASE = 800;
   // Elements left to right: [VTs...] [gap] [CTs...] [gap] [Device] [gap?] [Module?]
   var totalMM = (vtQty * VTW) + (vtQty > 0 ? GAP : 0)
               + (ctQty * CTW) + (ctQty > 0 ? GAP : 0)
@@ -2581,10 +2610,22 @@ function renderPanelDiagram() {
               + (isFull ? GAP + MW : 0);
 
   // Fixed comfortable scale — SVG grows to full size, container scrolls/zooms
-  var scale = 2.8;//2.8;
+  var scale = 2.8;
   var PX = function(mm) { return mm * scale; };
-  var SVG_W = totalMM * scale + 80;  // 80
-  var SVG_H = Math.max(DH * scale + 150, 300); //300
+
+  // Compute exact pixel width by simulating the layout cursor
+  var _cx = 30;
+  for (var _v = 0; _v < vtQty; _v++)
+    _cx += PX(VTW) + (_v < vtQty-1 ? PX(4) : PX(GAP));
+  if (vtQty === 0 && ctQty > 0) _cx += 0;
+  for (var _ct = 0; _ct < ctQty; _ct++)
+    _cx += PX(CTW) + (_ct < ctQty-1 ? PX(4) : PX(GAP));
+  if (ctQty === 0 && vtQty === 0) _cx += 0;
+  _cx += PX(DW);
+  if (isFull) _cx += PX(GAP) + PX(MW);
+  // Add right margin
+  var SVG_W = _cx + 50;
+  var SVG_H = Math.max(DH * scale + 150, 300);
 
   var BASELINE = SVG_H - 70; // bottom of all elements
 
@@ -2849,36 +2890,62 @@ function renderPanelDiagram() {
 
 // ─── ZOOM HELPERS ───────────────────────────────────────────
 function applyPanelZoom() {
-  var slider = el('panel-zoom-slider');
-  var zw = el('panel-dim-zoom-wrap');
+  var slider  = el('panel-zoom-slider');
+  var zw      = el('panel-dim-zoom-wrap');
+  var spacer  = el('panel-dim-spacer');
+  var svgWrap = el('panel-dim-svg-wrap');
   if (!slider || !zw) return;
+
   var z = parseFloat(slider.value);
-  zw.style.transform = 'scale(' + z + ')';
   el('panel-zoom-pct').textContent = Math.round(z * 100) + '%';
+
+  var svgEl = svgWrap ? svgWrap.querySelector('svg') : null;
+  if (!svgEl) return;
+
+  var sw = parseFloat(svgEl.getAttribute('width')  || 800);
+  var sh = parseFloat(svgEl.getAttribute('height') || 300);
+
+  // Scale the SVG visually with transform
+  zw.style.transform       = 'scale(' + z + ')';
+  zw.style.transformOrigin = 'top left';
+  zw.style.width           = sw + 'px';
+  zw.style.height          = sh + 'px';
+
+  // Spacer reserves the true scaled footprint so the scroll container
+  // generates correct horizontal AND vertical scrollbars
+  if (spacer) {
+    var scaledW = Math.ceil(sw * z);
+    var scaledH = Math.ceil(sh * z);
+    spacer.style.display   = 'block';
+    spacer.style.width     = scaledW + 'px';
+    spacer.style.height    = scaledH + 'px';
+    spacer.style.minWidth  = scaledW + 'px';
+    spacer.style.minHeight = scaledH + 'px';
+  }
 }
 
 function panelZoom(delta) {
   var slider = el('panel-zoom-slider');
   if (!slider) return;
-  var z = Math.min(3, Math.max(0.2, parseFloat(slider.value) + delta));
-  slider.value = z;
+  var z = Math.min(3, Math.max(0.05, parseFloat(slider.value) + delta));
+  slider.value = z.toFixed(3);
   el('panel-zoom-pct').textContent = Math.round(z * 100) + '%';
   applyPanelZoom();
 }
 
 function panelZoomFit() {
-  var scroll = el('panel-dim-scroll');
-  var wrap   = el('panel-dim-svg-wrap');
-  var slider = el('panel-zoom-slider');
-  if (!scroll || !wrap || !slider) return;
-  var svgEl = wrap.querySelector('svg');
+  var scroll  = el('panel-dim-scroll');
+  var svgWrap = el('panel-dim-svg-wrap');
+  var slider  = el('panel-zoom-slider');
+  if (!scroll || !svgWrap || !slider) return;
+  var svgEl = svgWrap.querySelector('svg');
   if (!svgEl) return;
   var availW = scroll.clientWidth  - 40;
   var availH = scroll.clientHeight - 40;
   var svgW = parseFloat(svgEl.getAttribute('width')  || 800);
   var svgH = parseFloat(svgEl.getAttribute('height') || 300);
   var fit = Math.min(availW / svgW, availH / svgH, 3);
-  fit = Math.max(fit, 0.2);
+  fit = Math.max(fit, 0.05);
   slider.value = fit.toFixed(3);
   el('panel-zoom-pct').textContent = Math.round(fit * 100) + '%';
   applyPanelZoom();
@@ -2887,7 +2954,7 @@ function panelZoomFit() {
 function panelZoomReset() {
   var slider = el('panel-zoom-slider');
   if (!slider) return;
-  slider.value = 1;
+  slider.value = '1';
   el('panel-zoom-pct').textContent = '100%';
   applyPanelZoom();
 }
