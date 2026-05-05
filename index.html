@@ -1,0 +1,2898 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy Monitor – Sistema de Cotización</title>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --bg2: #0f1520;
+    --bg3: #141c2b;
+    --panel: #111826;
+    --border: #1e2d45;
+    --border2: #253650;
+    --accent: #00d4ff;
+    --accent2: #0096b8;
+    --accent3: #00ff88;
+    --warn: #ff9f00;
+    --danger: #ff4455;
+    --text: #d8e8f5;
+    --text2: #7a9ab5;
+    --text3: #4a6a85;
+    --mono: 'Share Tech Mono', monospace;
+    --head: 'Rajdhani', sans-serif;
+    --body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* GRID BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app-wrapper { position: relative; z-index: 1; }
+
+  /* ── HEADER ── */
+  .header {
+    background: linear-gradient(135deg, #0d1728 0%, #0a1220 100%);
+    border-bottom: 1px solid var(--border2);
+    padding: 0 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 64px;
+    box-shadow: 0 4px 30px rgba(0,212,255,0.08);
+  }
+
+  .header-left { display: flex; align-items: center; gap: 1rem; }
+
+  .logo-device {
+    width: 38px; height: 38px;
+    background: linear-gradient(135deg, #00d4ff22, #00d4ff44);
+    border: 1px solid var(--accent2);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  .header-title {
+    font-family: var(--head);
+    font-size: 1.4rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(0,212,255,0.4);
+  }
+
+  .header-sub {
+    font-size: 0.7rem;
+    color: var(--text3);
+    letter-spacing: 3px;
+    text-transform: uppercase;
+  }
+
+  .header-actions { display: flex; gap: 0.75rem; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    padding: 0.45rem 1rem;
+    border-radius: 6px;
+    font-family: var(--head);
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+
+  .btn-primary {
+    background: linear-gradient(135deg, #00b8d9, #0096b8);
+    color: #fff;
+    border-color: var(--accent2);
+    box-shadow: 0 0 15px rgba(0,212,255,0.2);
+  }
+  .btn-primary:hover { box-shadow: 0 0 25px rgba(0,212,255,0.4); transform: translateY(-1px); }
+
+  .btn-outline {
+    background: transparent;
+    color: var(--accent);
+    border-color: var(--accent2);
+  }
+  .btn-outline:hover { background: rgba(0,212,255,0.08); }
+
+  .btn-success {
+    background: linear-gradient(135deg, #00cc66, #008844);
+    color: #fff;
+    border-color: #00aa55;
+    box-shadow: 0 0 15px rgba(0,255,136,0.15);
+  }
+  .btn-success:hover { box-shadow: 0 0 25px rgba(0,255,136,0.3); transform: translateY(-1px); }
+
+  .btn-danger {
+    background: transparent;
+    color: var(--danger);
+    border-color: var(--danger);
+    padding: 0.3rem 0.6rem;
+    font-size: 0.75rem;
+  }
+  .btn-danger:hover { background: rgba(255,68,85,0.1); }
+
+  .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
+
+  /* ── LAYOUT ── */
+  .main-layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 0;
+    min-height: calc(100vh - 64px);
+  }
+
+  .content-area {
+    padding: 1.5rem;
+    overflow-y: auto;
+  }
+
+  .sidebar {
+    background: var(--bg2);
+    border-left: 1px solid var(--border);
+    padding: 1.5rem;
+    overflow-y: auto;
+    position: sticky;
+    top: 0;
+    max-height: calc(100vh - 64px);
+  }
+
+  /* ── TABS ── */
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.35rem;
+  }
+
+  .tab {
+    flex: 1;
+    padding: 0.5rem;
+    text-align: center;
+    font-family: var(--head);
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.2s;
+    color: var(--text2);
+    border: 1px solid transparent;
+  }
+
+  .tab.active {
+    background: linear-gradient(135deg, #0d1f35, #0a1928);
+    color: var(--accent);
+    border-color: var(--border2);
+    box-shadow: 0 0 10px rgba(0,212,255,0.1);
+  }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.2s;
+  }
+  .card:hover { border-color: var(--border2); }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
+  }
+
+  .card-title {
+    font-family: var(--head);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .card-title .icon { font-size: 1.1rem; }
+
+  /* ── FORM ELEMENTS ── */
+  .form-row {
+    display: grid;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .form-row.cols-2 { grid-template-columns: 1fr 1fr; }
+  .form-row.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+
+  label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  input[type="text"], input[type="number"], input[type="email"], select, textarea {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 0.88rem;
+    padding: 0.5rem 0.75rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent2);
+    box-shadow: 0 0 0 2px rgba(0,212,255,0.12);
+  }
+  input[type="number"] { font-family: var(--mono); }
+
+  select option { background: var(--bg3); }
+
+  .radio-group {
+    display: flex;
+    gap: 0.5rem;
+  }
+
+  .radio-option {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.45rem;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    color: var(--text2);
+    transition: all 0.2s;
+    background: var(--bg3);
+  }
+
+  .radio-option:has(input:checked) {
+    border-color: var(--accent2);
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+  }
+
+  .radio-option input { display: none; }
+
+  /* ── VOLTAGE ROWS ── */
+  .voltage-row {
+    display: grid;
+    grid-template-columns: 80px 1fr 1fr 1fr auto;
+    gap: 0.6rem;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+    transition: border-color 0.2s;
+  }
+  .voltage-row:hover { border-color: var(--border2); }
+
+  .voltage-label {
+    font-family: var(--mono);
+    font-size: 0.8rem;
+    color: var(--accent);
+    text-align: center;
+    background: rgba(0,212,255,0.06);
+    border: 1px solid var(--border2);
+    border-radius: 5px;
+    padding: 0.4rem;
+  }
+
+  /* ── BADGE ── */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .badge-mono { background: rgba(0,212,255,0.1); color: var(--accent); border: 1px solid rgba(0,212,255,0.2); }
+  .badge-tri { background: rgba(255,159,0,0.1); color: var(--warn); border: 1px solid rgba(255,159,0,0.2); }
+  .badge-green { background: rgba(0,255,136,0.1); color: var(--accent3); border: 1px solid rgba(0,255,136,0.2); }
+
+  /* ── DIAGRAM ── */
+  .diagram-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .diagram-title {
+    font-family: var(--head);
+    font-size: 0.85rem;
+    letter-spacing: 2px;
+    color: var(--text2);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .device-diagram {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .device-box {
+    background: linear-gradient(135deg, #0d1f35, #0a1928);
+    border: 2px solid var(--accent2);
+    border-radius: 10px;
+    padding: 1rem;
+    min-width: 180px;
+    box-shadow: 0 0 20px rgba(0,212,255,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+  }
+
+  .device-box::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px; right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  }
+
+  .device-name {
+    font-family: var(--head);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 2px;
+    text-align: center;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .module-box {
+    background: linear-gradient(135deg, #1a1405, #120e02);
+    border: 2px solid var(--warn);
+    border-radius: 10px;
+    padding: 1rem;
+    min-width: 180px;
+    box-shadow: 0 0 20px rgba(255,159,0,0.1), inset 0 1px 0 rgba(255,255,255,0.05);
+    position: relative;
+  }
+
+  .module-box::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 20px; right: 20px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--warn), transparent);
+  }
+
+  .module-name {
+    font-family: var(--head);
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: var(--warn);
+    letter-spacing: 1.5px;
+    text-align: center;
+    margin-bottom: 0.75rem;
+    text-transform: uppercase;
+  }
+
+  .input-ports {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+  }
+
+  .port-item {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.72rem;
+    font-family: var(--mono);
+  }
+
+  .port-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent3);
+    box-shadow: 0 0 6px var(--accent3);
+    flex-shrink: 0;
+  }
+  .port-dot.warn { background: var(--warn); box-shadow: 0 0 6px var(--warn); }
+  .port-dot.accent { background: var(--accent); box-shadow: 0 0 6px var(--accent); }
+
+  .connector-line {
+    display: flex;
+    align-items: center;
+    padding-top: 1rem;
+  }
+
+  .connector-line svg { color: var(--border2); }
+
+  /* ── SUMMARY SIDEBAR ── */
+  .summary-title {
+    font-family: var(--head);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .summary-section {
+    margin-bottom: 1rem;
+  }
+
+  .summary-section-title {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 0.5rem;
+  }
+
+  .summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.35rem 0;
+    border-bottom: 1px solid rgba(30,45,69,0.5);
+    font-size: 0.82rem;
+  }
+
+  .summary-row .label { color: var(--text2); }
+  .summary-row .value {
+    font-family: var(--mono);
+    color: var(--text);
+    font-size: 0.8rem;
+  }
+  .summary-row .value.accent { color: var(--accent); }
+  .summary-row .value.green { color: var(--accent3); }
+
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 0.75rem 0;
+  }
+
+  .total-box {
+    background: linear-gradient(135deg, #0d1f35, #0a1928);
+    border: 1px solid var(--accent2);
+    border-radius: 8px;
+    padding: 0.85rem;
+    margin-top: 0.75rem;
+  }
+
+  .total-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .total-label { font-size: 0.78rem; color: var(--text2); }
+  .total-value { font-family: var(--mono); font-size: 0.85rem; color: var(--text); }
+  .total-final { 
+    font-family: var(--head);
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--accent);
+    text-shadow: 0 0 15px rgba(0,212,255,0.3);
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--bg2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 1.75rem;
+    width: 90%;
+    max-width: 640px;
+    max-height: 85vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 40px rgba(0,212,255,0.06);
+  }
+
+  .modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .modal-title {
+    font-family: var(--head);
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .close-btn {
+    background: none;
+    border: none;
+    color: var(--text2);
+    font-size: 1.3rem;
+    cursor: pointer;
+    padding: 0.25rem;
+    transition: color 0.2s;
+  }
+  .close-btn:hover { color: var(--text); }
+
+  /* ── INFO CHIP ── */
+  .info-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    background: rgba(0,212,255,0.06);
+    border: 1px solid rgba(0,212,255,0.15);
+    border-radius: 6px;
+    padding: 0.3rem 0.7rem;
+    font-size: 0.75rem;
+    color: var(--text2);
+    margin: 0.25rem 0.1rem;
+  }
+  .info-chip .dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+
+  /* ── COUNTER ── */
+  .counter {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .counter-btn {
+    width: 28px; height: 28px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text);
+    font-size: 1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .counter-btn:hover { border-color: var(--accent2); color: var(--accent); }
+  .counter-display {
+    font-family: var(--mono);
+    font-size: 1rem;
+    min-width: 32px;
+    text-align: center;
+    color: var(--accent);
+  }
+
+  /* ── VERSION TOGGLE ── */
+  .version-toggle {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .version-card {
+    padding: 1rem;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    background: var(--bg3);
+  }
+  .version-card.selected {
+    border-color: var(--accent);
+    background: rgba(0,212,255,0.06);
+  }
+  .version-card .v-title {
+    font-family: var(--head);
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    color: var(--accent);
+    margin-bottom: 0.3rem;
+  }
+  .version-card .v-desc {
+    font-size: 0.72rem;
+    color: var(--text2);
+    line-height: 1.4;
+  }
+  .version-card .v-icon { font-size: 1.5rem; margin-bottom: 0.4rem; }
+
+  /* ── DIGITAL OUTPUTS ── */
+  .do-row {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
+
+  /* ── SETTINGS SECTIONS ── */
+  .settings-group {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1rem;
+  }
+  .settings-group-title {
+    font-family: var(--head);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--text3);
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  /* ── LOGO UPLOAD ── */
+  .logo-upload-area {
+    border: 2px dashed var(--border);
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: var(--bg);
+    position: relative;
+  }
+  .logo-upload-area:hover { border-color: var(--accent2); }
+  .logo-upload-area img { max-height: 60px; max-width: 100%; object-fit: contain; }
+  .logo-upload-area input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  .logo-placeholder { color: var(--text3); font-size: 0.8rem; }
+
+  /* ── DIGITAL OUTPUTS SECTION ── */
+  .do-item {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 0.75rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+
+  .do-num {
+    font-family: var(--mono);
+    font-size: 0.75rem;
+    color: var(--accent3);
+    background: rgba(0,255,136,0.06);
+    border: 1px solid rgba(0,255,136,0.15);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    white-space: nowrap;
+  }
+
+  /* ── CHIP INDICATOR ── */
+  .chips-indicator {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .chip-icon {
+    width: 30px; height: 20px;
+    border: 1px solid var(--border2);
+    border-radius: 3px;
+    background: var(--bg3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.6rem;
+    font-family: var(--mono);
+    color: var(--text3);
+    transition: all 0.2s;
+  }
+  .chip-icon.active {
+    background: rgba(0,212,255,0.1);
+    border-color: var(--accent2);
+    color: var(--accent);
+  }
+
+  /* ── PULSE DOT ── */
+  .pulse {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent3);
+    animation: pulse 1.5s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 0 0 rgba(0,255,136,0.4); }
+    50% { box-shadow: 0 0 0 5px rgba(0,255,136,0); }
+  }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
+
+  /* section divider */
+  .section-sep {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin: 1.25rem 0 1rem;
+  }
+  .section-sep .sep-line { flex: 1; height: 1px; background: var(--border); }
+  .section-sep .sep-text {
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--text3);
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 900px) {
+    .main-layout { grid-template-columns: 1fr; }
+    .sidebar { position: static; max-height: none; border-left: none; border-top: 1px solid var(--border); }
+    .voltage-row { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="app-wrapper">
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-device">⚡</div>
+    <div>
+      <div class="header-title">ENERGY MONITOR</div>
+      <div class="header-sub">Sistema de Cotización v2.0</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="openClient()">👤 Cliente</button>
+    <button class="btn btn-outline" onclick="openPanelDim()">📐 Dimensiones</button>
+    <button class="btn btn-outline" onclick="openSettings()">⚙ Ajustes</button>
+    <button class="btn btn-success" onclick="openPreview()">📄 Vista Previa PDF</button>
+  </div>
+</header>
+
+<!-- MAIN LAYOUT -->
+<div class="main-layout">
+
+  <!-- CONTENT -->
+  <div class="content-area">
+
+    <!-- TABS -->
+    <div class="tabs">
+      <div class="tab active" onclick="setTab('general')">🏠 General</div>
+      <div class="tab" onclick="setTab('mediciones')">⚡ Mediciones</div>
+      <div class="tab" onclick="setTab('outputs')">↑ Salidas</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- TAB: GENERAL                                       -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="tab-panel active" id="tab-general">
+
+      <!-- DIAGRAMA siempre visible arriba -->
+      <div class="card" style="margin-bottom:0.85rem;">
+        <div class="card-header" style="margin-bottom:0.5rem;">
+          <div class="card-title"><span class="icon">📊</span> Diagrama del Sistema</div>
+          <span class="pulse"></span>
+        </div>
+        <div id="diagram-content" style="min-height:80px;"></div>
+      </div>
+
+      <!-- Selección de Producto -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">📦</span> Selección de Producto</div>
+        </div>
+
+        <div class="form-group" style="margin-bottom:1rem;">
+          <label>Producto a cotizar</label>
+          <select id="product-select" onchange="setProduct(this.value)" style="max-width:380px;">
+            <option value="energy-monitor">Energy Monitor – Sistema de Monitoreo de Panel</option>
+            <!-- Futuros productos se agregan aquí -->
+          </select>
+        </div>
+
+        <div id="product-description" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.85rem;font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:1rem;">
+          Sistema de monitoreo de voltajes y corrientes para paneles de control industriales. Mide señales 4-20 mA de voltaje y corriente para supervisión en tiempo real.
+        </div>
+
+        <!-- Versión del dispositivo -->
+        <div class="section-sep"><div class="sep-line"></div><div class="sep-text">Versión del Dispositivo</div><div class="sep-line"></div></div>
+        <div class="version-toggle">
+          <div class="version-card selected" id="ver-basic" onclick="setVersion('basic')">
+            <div class="v-icon">📟</div>
+            <div class="v-title">BASIC</div>
+            <div class="v-desc">Configuración fija:<br>1 voltaje trifásico + 1 carga trifásica<br><span style="color:var(--accent)">6 entradas · costo fijo</span></div>
+          </div>
+          <div class="version-card" id="ver-full" onclick="setVersion('full')">
+            <div class="v-icon">🖥</div>
+            <div class="v-title">FULL PANEL</div>
+            <div class="v-desc">Configuración personalizada<br>Módulo externo de expansión<br><span style="color:var(--warn)">Entradas adicionales ilimitadas</span></div>
+          </div>
+        </div>
+
+        <!-- Banner modo BASIC -->
+        <div id="basic-locked-banner" style="display:flex;align-items:center;gap:0.75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:0.85rem 1rem;margin-top:0.5rem;">
+          <span style="font-size:1.3rem;">🔒</span>
+          <div>
+            <div style="font-family:var(--head);font-size:0.85rem;font-weight:700;color:var(--accent);letter-spacing:1px;">CONFIGURACIÓN FIJA – MODO BASIC</div>
+            <div style="font-size:0.75rem;color:var(--text2);margin-top:0.2rem;">1 voltaje trifásico (3 entradas) · 1 carga trifásica (3 entradas) · 6 entradas totales. Para personalizar, seleccione FULL PANEL.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- TAB: MEDICIONES                                    -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-mediciones">
+      <div id="mediciones-lock-overlay" style="display:none;position:relative;">
+        <div style="background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:1.5rem;text-align:center;">
+          <div style="font-size:2rem;margin-bottom:0.5rem;">🔒</div>
+          <div style="font-family:var(--head);font-size:1rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.4rem;">MODO BASIC ACTIVO</div>
+          <div style="font-size:0.82rem;color:var(--text2);">Las mediciones están fijadas en 1 voltaje trifásico y 1 carga trifásica.<br>Cambie a <strong style="color:var(--accent)">FULL PANEL</strong> para personalizar.</div>
+          <button class="btn btn-primary" style="margin-top:1rem;" onclick="setVersion('full')">Activar Full Panel</button>
+        </div>
+      </div>
+
+      <div id="mediciones-content">
+        <!-- Voltajes -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">⚡</span> Niveles de Voltaje</div>
+            <div class="info-chip"><span class="dot"></span> Cada fase = 1 entrada 4-20mA</div>
+          </div>
+          <div class="form-row cols-2" style="align-items:center">
+            <div class="form-group">
+              <label>Cantidad de niveles de voltaje</label>
+              <div class="counter">
+                <button class="counter-btn" onclick="changeVoltageCount(-1)">−</button>
+                <span class="counter-display" id="voltage-count-display">1</span>
+                <button class="counter-btn" onclick="changeVoltageCount(1)">+</button>
+              </div>
+            </div>
+            <div style="font-size:0.78rem;color:var(--text2);line-height:1.5;">
+              Monofásico (1 entrada) o trifásico (3 entradas). 1 transductor VT por nivel.
+            </div>
+          </div>
+          <div id="voltage-rows"></div>
+        </div>
+
+        <!-- Corrientes -->
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title"><span class="icon">〰</span> Monitoreo de Cargas</div>
+            <div class="info-chip"><span class="dot"></span> Cada fase = 1 entrada 4-20mA</div>
+          </div>
+
+          <div class="section-sep"><div class="sep-line"></div><div class="sep-text">Cargas Monofásicas</div><div class="sep-line"></div></div>
+          <div class="form-row cols-2" style="align-items:center;">
+            <div class="form-group">
+              <label>Cantidad de cargas 1Ø</label>
+              <div class="counter">
+                <button class="counter-btn" onclick="changeSingle(-1)">−</button>
+                <span class="counter-display" id="single-count">0</span>
+                <button class="counter-btn" onclick="changeSingle(1)">+</button>
+              </div>
+            </div>
+            <div style="font-size:0.78rem;color:var(--text2);">1 entrada · 1 polo del transductor CT por carga</div>
+          </div>
+
+          <div class="section-sep"><div class="sep-line"></div><div class="sep-text">Cargas Trifásicas</div><div class="sep-line"></div></div>
+          <div class="form-row cols-2" style="align-items:center;">
+            <div class="form-group">
+              <label>Cantidad de cargas 3Ø</label>
+              <div class="counter">
+                <button class="counter-btn" onclick="changeThree(-1)">−</button>
+                <span class="counter-display" id="three-count">0</span>
+                <button class="counter-btn" onclick="changeThree(1)">+</button>
+              </div>
+            </div>
+            <div style="font-size:0.78rem;color:var(--text2);">3 entradas · 1 transductor CT completo por carga</div>
+          </div>
+
+          <div id="current-summary" style="margin-top:1rem;"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- TAB: SALIDAS DIGITALES                             -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-outputs">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title"><span class="icon">↑</span> Salidas Digitales</div>
+          <div class="info-chip"><span class="dot" style="background:var(--accent3);"></span> Relés / Señales de control</div>
+        </div>
+
+        <div class="form-row cols-2" style="align-items:center;">
+          <div class="form-group">
+            <label>Cantidad de salidas digitales</label>
+            <div class="counter">
+              <button class="counter-btn" onclick="changeDO(-1)">−</button>
+              <span class="counter-display" id="do-count">0</span>
+              <button class="counter-btn" onclick="changeDO(1)">+</button>
+            </div>
+          </div>
+          <div style="font-size:0.78rem; color:var(--text2);">
+            Salidas tipo relé para control o alarmas
+          </div>
+        </div>
+
+        <div id="do-list" style="margin-top:1rem;"></div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- SIDEBAR SUMMARY -->
+  <div class="sidebar">
+    <div class="summary-title">📋 Resumen de Cotización</div>
+
+    <div class="summary-section">
+      <div class="summary-section-title">Configuración</div>
+      <div class="summary-row">
+        <span class="label">Versión</span>
+        <span class="value accent" id="sum-version">BASIC</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Entradas voltaje</span>
+        <span class="value" id="sum-volt-inputs">0</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Entradas corriente</span>
+        <span class="value" id="sum-curr-inputs">0</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Salidas digitales</span>
+        <span class="value" id="sum-do">0</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Total entradas 4-20mA</span>
+        <span class="value accent" id="sum-total-inputs">0</span>
+      </div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="summary-section">
+      <div class="summary-section-title">Chips de medición</div>
+      <div class="summary-row">
+        <span class="label">Entradas requeridas</span>
+        <span class="value" id="sum-required-inputs">0</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Entradas integradas</span>
+        <span class="value green" id="sum-base-inputs">6</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Entradas adicionales</span>
+        <span class="value" id="sum-extra-inputs">0</span>
+      </div>
+      <div class="summary-row">
+        <span class="label">Chips adicionales (×4)</span>
+        <span class="value accent" id="sum-chips">0</span>
+      </div>
+      <div id="chip-icons" class="chips-indicator"></div>
+    </div>
+
+    <hr class="divider">
+
+    <div class="total-box">
+      <div class="total-row">
+        <span class="total-label">Energy Monitor (base)</span>
+        <span class="total-value" id="sum-base-price">$0.00</span>
+      </div>
+      <div class="total-row" id="full-module-row" style="display:none">
+        <span class="total-label">Módulo Full Panel</span>
+        <span class="total-value" id="sum-module-price">$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Chips (<span id="sum-chip-qty">0</span> × precio)</span>
+        <span class="total-value" id="sum-chip-cost">$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Transductores corriente (<span id="sum-ct-qty">0</span> uds)</span>
+        <span class="total-value" id="sum-ct-cost">$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Transductores voltaje (<span id="sum-vt-qty">0</span> uds)</span>
+        <span class="total-value" id="sum-vt-cost">$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Salidas digitales</span>
+        <span class="total-value" id="sum-do-cost">$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">Config. plataforma (<span id="sum-svc-pct">2.5</span>%)</span>
+        <span class="total-value" id="sum-svc-cost">$0.00</span>
+      </div>
+      <hr class="divider" style="margin:0.6rem 0">
+      <div class="total-row">
+        <span class="total-label">Subtotal</span>
+        <span class="total-value" id="sum-subtotal">$0.00</span>
+      </div>
+      <div class="total-row">
+        <span class="total-label">IVA (<span id="sum-iva-pct">13</span>%)</span>
+        <span class="total-value" id="sum-iva">$0.00</span>
+      </div>
+      <hr class="divider" style="margin:0.6rem 0">
+      <div class="total-row">
+        <span style="font-family:var(--head); font-size:0.85rem; letter-spacing:1px; color:var(--text);">TOTAL</span>
+        <span class="total-final" id="sum-total">$0.00</span>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <button class="btn btn-primary" style="width:100%;justify-content:center;" onclick="openPreview()">
+        👁 Vista Previa / Descargar PDF
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<!-- PDF PREVIEW MODAL -->
+<div class="modal-overlay" id="preview-modal">
+  <div class="modal" style="max-width:860px;width:96%;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:var(--bg2);border-bottom:1px solid var(--border2);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:0.75rem;">
+        <div style="font-family:var(--head);font-size:1rem;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;">Vista Previa de Cotización</div>
+        <div id="preview-quote-num" style="font-family:var(--mono);font-size:0.75rem;color:var(--text3);background:var(--bg3);border:1px solid var(--border);border-radius:4px;padding:0.2rem 0.5rem;"></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:0.6rem;">
+        <button class="btn btn-primary" onclick="downloadFromPreview()" style="gap:0.35rem;">
+          <span>⬇</span> Descargar PDF
+        </button>
+        <button class="close-btn" onclick="closePreview()" style="font-size:1.4rem;line-height:1;">✕</button>
+      </div>
+    </div>
+    <!-- Loading state -->
+    <div id="preview-loading" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1rem;background:var(--bg);padding:3rem;">
+      <div style="width:40px;height:40px;border:3px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="font-family:var(--head);font-size:0.9rem;letter-spacing:2px;color:var(--text2);">GENERANDO VISTA PREVIA...</div>
+    </div>
+    <!-- iframe -->
+    <iframe id="preview-iframe" style="flex:1;border:none;display:none;background:#525659;min-height:500px;" title="Vista previa PDF"></iframe>
+    <!-- Footer bar -->
+    <div style="padding:0.6rem 1.25rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+      <div style="font-size:0.72rem;color:var(--text3);">El PDF se generará con los datos actuales de la cotización.</div>
+      <button class="btn btn-outline btn-sm" onclick="closePreview()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- JSON CONFIG STATUS BANNER (shown briefly on load) -->
+<div id="json-banner" style="display:none;position:fixed;top:68px;right:1.25rem;z-index:500;padding:0.6rem 1rem;border-radius:8px;font-size:0.78rem;font-family:var(--head);letter-spacing:1px;box-shadow:0 4px 20px rgba(0,0,0,0.4);transition:opacity 0.4s;"></div>
+
+<!-- CLIENT MODAL -->
+<div class="modal-overlay" id="client-modal">
+  <div class="modal" style="max-width:540px;">
+    <div class="modal-header">
+      <div class="modal-title">👤 Datos del Cliente</div>
+      <button class="close-btn" onclick="closeClient()">✕</button>
+    </div>
+
+    <div class="settings-group">
+      <div class="settings-group-title">🏢 Empresa Cliente</div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Nombre de la empresa</label>
+          <input type="text" id="cfg-client-company" placeholder="Empresa Cliente S.A.">
+        </div>
+        <div class="form-group">
+          <label>Cédula jurídica</label>
+          <input type="text" id="cfg-client-cedula" placeholder="3-101-000000">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Nombre del contacto</label>
+          <input type="text" id="cfg-client-name" placeholder="Nombre Apellido">
+        </div>
+        <div class="form-group">
+          <label>Correo del contacto</label>
+          <input type="text" id="cfg-client-email" placeholder="contacto@cliente.com">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="cfg-client-phone" placeholder="+506 0000-0000">
+        </div>
+        <div class="form-group">
+          <label>N.º de cotización (opcional)</label>
+          <input type="text" id="cfg-quote-ref" placeholder="Referencia interna">
+        </div>
+      </div>
+    </div>
+
+    <div style="display:flex;justify-content:flex-end;gap:0.75rem;margin-top:1rem;">
+      <button class="btn btn-outline" onclick="closeClient()">Cerrar</button>
+      <button class="btn btn-primary" onclick="closeClient()">✓ Listo</button>
+    </div>
+  </div>
+</div>
+
+<!-- PANEL DIMENSIONS MODAL -->
+<div class="modal-overlay" id="panel-dim-modal">
+  <div class="modal" style="max-width:900px;width:96%;padding:0;overflow:hidden;display:flex;flex-direction:column;max-height:92vh;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:1rem 1.25rem;background:var(--bg2);border-bottom:1px solid var(--border2);flex-shrink:0;">
+      <div class="modal-title">📐 Dimensiones Requeridas en Panel</div>
+      <button class="close-btn" onclick="closePanelDim()">✕</button>
+    </div>
+
+    <!-- Controls bar -->
+    <div style="display:flex;flex-wrap:wrap;gap:0.75rem;padding:0.85rem 1.25rem;background:var(--bg3);border-bottom:1px solid var(--border);flex-shrink:0;align-items:flex-end;">
+
+      <div class="form-group" style="min-width:120px;">
+        <label>Ancho disp. principal (mm)</label>
+        <input type="number" id="dim-device-w" value="115" min="50" max="400" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
+      <div class="form-group" style="min-width:120px;">
+        <label>Alto disp. principal (mm)</label>
+        <input type="number" id="dim-device-h" value="130" min="50" max="400" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
+      <div class="form-group" style="min-width:120px;" id="dim-module-group">
+        <label>Ancho módulo Full Panel (mm)</label>
+        <input type="number" id="dim-module-w" value="150" min="50" max="400" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
+      <div class="form-group" style="min-width:100px;">
+        <label>Ancho transductor CT (mm)</label>
+        <input type="number" id="dim-ct-w" value="24" min="5" max="100" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
+      <div class="form-group" style="min-width:100px;">
+        <label>Ancho transductor VT (mm)</label>
+        <input type="number" id="dim-vt-w" value="45" min="5" max="100" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
+      <div class="form-group" style="min-width:90px;">
+        <label>Espacio entre elem. (mm)</label>
+        <input type="number" id="dim-gap" value="15" min="0" max="80" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
+    </div>
+
+    <!-- Zoom controls -->
+    <div style="display:flex;align-items:center;gap:0.75rem;padding:0.5rem 1.25rem;background:var(--bg2);border-bottom:1px solid var(--border);flex-shrink:0;">
+      <span style="font-size:0.72rem;color:var(--text3);letter-spacing:1px;text-transform:uppercase;font-family:var(--head);">Zoom</span>
+      <button onclick="panelZoom(-0.15)" class="counter-btn" style="font-size:1rem;font-weight:700;">−</button>
+      <input type="range" id="panel-zoom-slider" min="0.2" max="3" step="0.05" value="1"
+        oninput="el('panel-zoom-pct').textContent=Math.round(this.value*100)+'%'; applyPanelZoom()"
+        style="flex:1;max-width:220px;accent-color:var(--accent);">
+      <span id="panel-zoom-pct" style="font-family:var(--mono);font-size:0.82rem;color:var(--accent);min-width:42px;">100%</span>
+      <button onclick="panelZoom(0.15)" class="counter-btn" style="font-size:1rem;font-weight:700;">+</button>
+      <button onclick="panelZoomFit()" class="btn btn-outline btn-sm" style="margin-left:0.25rem;">⊡ Ajustar</button>
+      <button onclick="panelZoomReset()" class="btn btn-outline btn-sm">1:1</button>
+    </div>
+
+    <!-- SVG canvas — scrollable -->
+    <div id="panel-dim-scroll" style="flex:1;overflow:auto;background:var(--bg);padding:1.25rem;min-height:300px;cursor:grab;">
+      <div id="panel-dim-zoom-wrap" style="transform-origin:top left;display:inline-block;">
+        <div id="panel-dim-svg-wrap"></div>
+      </div>
+    </div>
+
+    <!-- Summary bar -->
+    <div id="panel-dim-summary" style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 1.25rem;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;font-size:0.78rem;"></div>
+
+    <!-- Footer -->
+    <div style="padding:0.6rem 1.25rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+      <div style="font-size:0.72rem;color:var(--text3);">Las dimensiones son referenciales. Verifique con las hojas de datos de cada componente.</div>
+      <button class="btn btn-outline btn-sm" onclick="closePanelDim()">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙ Configuración del Sistema</div>
+      <button class="close-btn" onclick="closeSettings()">✕</button>
+    </div>
+
+    <!-- Precios -->
+    <div class="settings-group">
+      <div class="settings-group-title">💰 Precios</div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Energy Monitor (precio base)</label>
+          <input type="number" id="cfg-base-price" value="500" min="0" step="0.01" onchange="recalculate()">
+        </div>
+        <div class="form-group">
+          <label>Módulo Full Panel</label>
+          <input type="number" id="cfg-module-price" value="300" min="0" step="0.01" onchange="recalculate()">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Costo por chip de medición (4 entradas)</label>
+          <input type="number" id="cfg-chip-price" value="25" min="0" step="0.01" onchange="recalculate()">
+        </div>
+        <div class="form-group">
+          <label>Precio por salida digital</label>
+          <input type="number" id="cfg-do-price" value="15" min="0" step="0.01" onchange="recalculate()">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Transductor de corriente (3 polos/unidad)</label>
+          <input type="number" id="cfg-ct-price" value="45" min="0" step="0.01" onchange="recalculate()"
+            title="Cada transductor mide hasta 3 corrientes (3 polos). Se calcula 1 transductor por cada 3 señales de corriente.">
+        </div>
+        <div class="form-group">
+          <label>Transductor de voltaje (1 nivel/unidad)</label>
+          <input type="number" id="cfg-vt-price" value="35" min="0" step="0.01" onchange="recalculate()"
+            title="Cada nivel de voltaje requiere un transductor independiente (monofásico o trifásico).">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>IVA (%)</label>
+          <input type="number" id="cfg-iva" value="13" min="0" max="100" step="0.1" onchange="recalculate()">
+        </div>
+        <div class="form-group">
+          <label>Configuración de plataforma (%)</label>
+          <input type="number" id="cfg-service-rate" value="2.5" min="0" max="100" step="0.1" onchange="recalculate()"
+            title="Porcentaje sobre el subtotal por el servicio de configuración del sistema">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Moneda</label>
+          <select id="cfg-currency" onchange="recalculate()">
+            <option value="$">USD ($)</option>
+            <option value="₡">CRC (₡)</option>
+            <option value="€">EUR (€)</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empresa propia -->
+    <div class="settings-group">
+      <div class="settings-group-title">🏢 Mi Empresa</div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Nombre de la empresa</label>
+          <input type="text" id="cfg-my-company" placeholder="Mi Empresa S.A.">
+        </div>
+        <div class="form-group">
+          <label>Cédula jurídica</label>
+          <input type="text" id="cfg-my-cedula" placeholder="3-101-000000">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
+          <label>Teléfono</label>
+          <input type="text" id="cfg-my-phone" placeholder="+506 0000-0000">
+        </div>
+        <div class="form-group">
+          <label>Correo electrónico</label>
+          <input type="text" id="cfg-my-email" placeholder="info@empresa.com">
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:0.5rem;">
+        <label>Logo de la empresa</label>
+        <div class="logo-upload-area" onclick="document.getElementById('logo-company-input').click()">
+          <input type="file" id="logo-company-input" accept="image/*" onchange="loadLogo(this,'logo-company-preview','logo-company-data')">
+          <img id="logo-company-preview" src="" style="display:none">
+          <div class="logo-placeholder" id="logo-company-ph">📤 Click para subir logo (PNG/JPG)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cliente → modal separado -->
+    <div class="settings-group" style="background:rgba(0,212,255,0.04);border-color:rgba(0,212,255,0.15);">
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div class="settings-group-title" style="margin-bottom:0.2rem;">👤 Datos del Cliente</div>
+          <div style="font-size:0.75rem;color:var(--text3);">Los datos del cliente se gestionan en su propio panel.</div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="closeSettings(); openClient();">Abrir →</button>
+      </div>
+    </div>
+
+    <!-- Logo producto -->
+    <div class="settings-group">
+      <div class="settings-group-title">📦 Logo del Producto</div>
+      <div class="form-group">
+        <label>Logo / imagen del Energy Monitor</label>
+        <div class="logo-upload-area" onclick="document.getElementById('logo-product-input').click()">
+          <input type="file" id="logo-product-input" accept="image/*" onchange="loadLogo(this,'logo-product-preview','logo-product-data')">
+          <img id="logo-product-preview" src="" style="display:none">
+          <div class="logo-placeholder" id="logo-product-ph">📤 Click para subir imagen del producto</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Estilo del PDF -->
+    <div class="settings-group">
+      <div class="settings-group-title">🎨 Estilo del PDF</div>
+
+      <!-- Theme presets -->
+      <div style="margin-bottom:0.85rem;">
+        <label style="display:block;margin-bottom:0.5rem;">Tema predefinido</label>
+        <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:0.4rem;" id="theme-presets"></div>
+      </div>
+
+      <!-- Color pickers -->
+      <div class="form-row cols-2" style="margin-bottom:0.5rem;">
+        <div class="form-group">
+          <label>Color principal (acento)</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="color" id="cfg-pdf-accent" value="#00d4ff" oninput="updatePdfPreview()" style="width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);">
+            <input type="text" id="cfg-pdf-accent-hex" value="#00d4ff" oninput="syncColorFromHex('cfg-pdf-accent','cfg-pdf-accent-hex')" style="flex:1;font-family:var(--mono);font-size:0.8rem;" placeholder="#00d4ff">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Color de fondo (header)</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="color" id="cfg-pdf-dark" value="#0a0e14" oninput="updatePdfPreview()" style="width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);">
+            <input type="text" id="cfg-pdf-dark-hex" value="#0a0e14" oninput="syncColorFromHex('cfg-pdf-dark','cfg-pdf-dark-hex')" style="flex:1;font-family:var(--mono);font-size:0.8rem;" placeholder="#0a0e14">
+          </div>
+        </div>
+      </div>
+      <div class="form-row cols-2" style="margin-bottom:0.5rem;">
+        <div class="form-group">
+          <label>Color secundario (cliente)</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="color" id="cfg-pdf-secondary" value="#1e3250" oninput="updatePdfPreview()" style="width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);">
+            <input type="text" id="cfg-pdf-secondary-hex" value="#1e3250" oninput="syncColorFromHex('cfg-pdf-secondary','cfg-pdf-secondary-hex')" style="flex:1;font-family:var(--mono);font-size:0.8rem;" placeholder="#1e3250">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Color de texto principal</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="color" id="cfg-pdf-text" value="#dce4f0" oninput="updatePdfPreview()" style="width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);">
+            <input type="text" id="cfg-pdf-text-hex" value="#dce4f0" oninput="syncColorFromHex('cfg-pdf-text','cfg-pdf-text-hex')" style="flex:1;font-family:var(--mono);font-size:0.8rem;" placeholder="#dce4f0">
+          </div>
+        </div>
+      </div>
+      <div class="form-row cols-2" style="margin-bottom:0.85rem;">
+        <div class="form-group">
+          <label>Color filas de tabla</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="color" id="cfg-pdf-row1" value="#0d1422" oninput="updatePdfPreview()" style="width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);">
+            <input type="text" id="cfg-pdf-row1-hex" value="#0d1422" oninput="syncColorFromHex('cfg-pdf-row1','cfg-pdf-row1-hex')" style="flex:1;font-family:var(--mono);font-size:0.8rem;" placeholder="#0d1422">
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Color filas alternas</label>
+          <div style="display:flex;gap:0.5rem;align-items:center;">
+            <input type="color" id="cfg-pdf-row2" value="#111a28" oninput="updatePdfPreview()" style="width:44px;height:32px;padding:2px;border-radius:6px;cursor:pointer;border:1px solid var(--border);background:var(--bg3);">
+            <input type="text" id="cfg-pdf-row2-hex" value="#111a28" oninput="syncColorFromHex('cfg-pdf-row2','cfg-pdf-row2-hex')" style="flex:1;font-family:var(--mono);font-size:0.8rem;" placeholder="#111a28">
+          </div>
+        </div>
+      </div>
+
+      <!-- Live mini preview -->
+      <label style="display:block;margin-bottom:0.4rem;">Vista previa del estilo</label>
+      <canvas id="pdf-style-preview" width="510" height="120" style="width:100%;border-radius:6px;border:1px solid var(--border);display:block;"></canvas>
+    </div>
+
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:0.75rem; margin-top:1rem;">
+      <button class="btn btn-outline btn-sm" onclick="exportSettingsJson()" title="Descarga un archivo energymonitor.json con los ajustes actuales para alojar en GitHub Pages">
+        ⬇ Exportar como .json
+      </button>
+      <div style="display:flex;gap:0.75rem;">
+        <button class="btn btn-outline" onclick="closeSettings()">Cancelar</button>
+        <button class="btn btn-primary" onclick="saveSettings()">✓ Guardar Ajustes</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════════════
+var state = {
+  version: 'basic',
+  voltageCount: 1,
+  voltages: [{ value: '', type: 'tri' }],
+  singlePhase: 0,
+  threePhase: 0,
+  digitalOutputs: 0
+};
+
+var cfg = {
+  basePrice: 500,
+  modulePrice: 300,
+  chipPrice: 25,
+  doPrice: 15,
+  ctPrice: 45,
+  vtPrice: 35,
+  serviceRate: 2.5,
+  iva: 13,
+  currency: '$'
+};
+
+var logoCompanyData = null;
+var logoProductData = null;
+
+// ═══════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', function() {
+  loadConfigFromJson(function() {
+    renderVoltageRows();
+    applyBasicLock();
+    updateSidebar();
+    renderDiagram();
+    buildThemePresets();
+    updatePdfPreview();
+  });
+});
+
+// ═══════════════════════════════════════════════════════════
+// JSON CONFIG LOADER
+// ═══════════════════════════════════════════════════════════
+function loadConfigFromJson(callback) {
+  fetch('energymonitor.json')
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
+    .then(function(data) {
+      applyJsonConfig(data);
+      showJsonBanner('✓ Configuración cargada desde energymonitor.json', true);
+      if (callback) callback();
+    })
+    .catch(function() {
+      // File not found or invalid — silently continue with defaults
+      if (callback) callback();
+    });
+}
+
+function applyJsonConfig(d) {
+  // Prices
+  function setVal(id, val) { var e = el(id); if (e && val !== undefined) e.value = val; }
+  function setTxt(id, val) { var e = el(id); if (e && val !== undefined) e.value = val; }
+
+  if (d.prices) {
+    setVal('cfg-base-price',   d.prices.basePrice);
+    setVal('cfg-module-price', d.prices.modulePrice);
+    setVal('cfg-chip-price',   d.prices.chipPrice);
+    setVal('cfg-do-price',     d.prices.doPrice);
+    setVal('cfg-ct-price',     d.prices.ctPrice);
+    setVal('cfg-vt-price',     d.prices.vtPrice);
+    setVal('cfg-iva',          d.prices.iva);
+    setVal('cfg-currency',     d.prices.currency);
+  }
+  if (d.company) {
+    setTxt('cfg-my-company', d.company.name);
+    setTxt('cfg-my-cedula',  d.company.cedula);
+    setTxt('cfg-my-phone',   d.company.phone);
+    setTxt('cfg-my-email',   d.company.email);
+  }
+  if (d.pdfColors) {
+    var keys = ['accent','dark','secondary','text','row1','row2'];
+    keys.forEach(function(k) {
+      if (d.pdfColors[k]) {
+        setVal('cfg-pdf-' + k,       d.pdfColors[k]);
+        setVal('cfg-pdf-' + k + '-hex', d.pdfColors[k]);
+      }
+    });
+  }
+  if (d.appTitle && el('header-title-text')) {
+    el('header-title-text').textContent = d.appTitle;
+  }
+}
+
+function showJsonBanner(msg, success) {
+  var b = el('json-banner');
+  if (!b) return;
+  b.textContent = msg;
+  b.style.background    = success ? 'rgba(0,200,130,0.15)' : 'rgba(255,68,85,0.15)';
+  b.style.border        = '1px solid ' + (success ? 'rgba(0,200,130,0.4)' : 'rgba(255,68,85,0.4)');
+  b.style.color         = success ? '#00cc88' : '#ff4455';
+  b.style.opacity       = '1';
+  b.style.display       = 'block';
+  setTimeout(function() {
+    b.style.opacity = '0';
+    setTimeout(function() { b.style.display = 'none'; }, 450);
+  }, 3000);
+}
+
+// ═══════════════════════════════════════════════════════════
+// CLIENT MODAL
+// ═══════════════════════════════════════════════════════════
+function openClient() {
+  el('client-modal').classList.add('open');
+}
+function closeClient() {
+  el('client-modal').classList.remove('open');
+}
+
+// ═══════════════════════════════════════════════════════════
+// FORMAT HELPERS
+// ═══════════════════════════════════════════════════════════
+function fmt(n) {
+  return (cfg.currency || '$') + parseFloat(n).toFixed(2);
+}
+function fmtN(n, sym) {
+  return (sym || '$') + parseFloat(n).toFixed(2);
+}
+function el(id) { return document.getElementById(id); }
+
+// ═══════════════════════════════════════════════════════════
+// TABS
+// ═══════════════════════════════════════════════════════════
+function setTab(tab) {
+  var tabNames = ['general','mediciones','outputs'];
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
+  var idx = tabNames.indexOf(tab);
+  var tabs = document.querySelectorAll('.tab');
+  if (tabs[idx]) tabs[idx].classList.add('active');
+  var panel = el('tab-' + tab);
+  if (panel) panel.classList.add('active');
+  // Always refresh diagram when general is shown
+  if (tab === 'general') renderDiagram();
+}
+
+// ═══════════════════════════════════════════════════════════
+// PRODUCT
+// ═══════════════════════════════════════════════════════════
+var PRODUCTS = {
+  'energy-monitor': {
+    name: 'Energy Monitor',
+    description: 'Sistema de monitoreo de voltajes y corrientes para paneles de control industriales. Mide se\u00F1ales 4-20\u00A0mA de voltaje y corriente para supervisi\u00F3n en tiempo real.'
+  }
+};
+
+function setProduct(id) {
+  var p = PRODUCTS[id] || PRODUCTS['energy-monitor'];
+  var desc = el('product-description');
+  if (desc) desc.textContent = p.description;
+}
+
+// ═══════════════════════════════════════════════════════════
+// VERSION + BASIC LOCK
+// ═══════════════════════════════════════════════════════════
+function setVersion(v) {
+  state.version = v;
+  el('ver-basic').classList.toggle('selected', v === 'basic');
+  el('ver-full').classList.toggle('selected', v === 'full');
+  el('sum-version').textContent = v === 'basic' ? 'BASIC' : 'FULL PANEL';
+  el('full-module-row').style.display = v === 'full' ? 'flex' : 'none';
+  applyBasicLock();
+  updateSidebar();
+  renderDiagram();
+}
+
+function applyBasicLock() {
+  var isBasic = state.version === 'basic';
+
+  // Banner in General tab
+  var banner = el('basic-locked-banner');
+  if (banner) banner.style.display = isBasic ? 'flex' : 'none';
+
+  // Lock/unlock Mediciones tab
+  var overlay  = el('mediciones-lock-overlay');
+  var content  = el('mediciones-content');
+  if (overlay) overlay.style.display = isBasic ? 'block' : 'none';
+  if (content) content.style.display = isBasic ? 'none'  : 'block';
+
+  if (isBasic) {
+    // Force fixed config: 1 trifásico voltage, 1 trifásico load, 0 single
+    state.voltageCount = 1;
+    state.voltages     = [{ value: '', type: 'tri' }];
+    state.singlePhase  = 0;
+    state.threePhase   = 1;
+    // Update visible counters in case user sees them
+    var vcd = el('voltage-count-display'); if(vcd) vcd.textContent = '1';
+    var sc  = el('single-count');          if(sc)  sc.textContent  = '0';
+    var tc  = el('three-count');           if(tc)  tc.textContent  = '1';
+    renderVoltageRows();
+    renderCurrentSummary();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// VOLTAGE ROWS
+// ═══════════════════════════════════════════════════════════
+function changeVoltageCount(delta) {
+  var nv = Math.max(1, Math.min(10, state.voltageCount + delta));
+  if (nv === state.voltageCount) return;
+  state.voltageCount = nv;
+  while (state.voltages.length < nv) state.voltages.push({ value: '', type: 'tri' });
+  state.voltages = state.voltages.slice(0, nv);
+  el('voltage-count-display').textContent = nv;
+  renderVoltageRows();
+  updateSidebar();
+}
+
+function renderVoltageRows() {
+  var container = el('voltage-rows');
+  if (!container) return;
+  container.innerHTML = '';
+  state.voltages.forEach(function(v, i) {
+    var row = document.createElement('div');
+    row.className = 'voltage-row';
+    var triSel  = v.type === 'tri'  ? ' selected' : '';
+    var monoSel = v.type === 'mono' ? ' selected' : '';
+    var badge = v.type === 'tri'
+      ? '<span class="badge badge-tri">3\u00D8 \u00B7 3 entradas</span>'
+      : '<span class="badge badge-mono">1\u00D8 \u00B7 1 entrada</span>';
+    row.innerHTML =
+      '<div class="voltage-label">V' + (i+1) + '</div>' +
+      '<div class="form-group"><label>Valor (V)</label>' +
+        '<input type="number" placeholder="ej: 480" value="' + (v.value||'') + '" ' +
+        'onchange="state.voltages[' + i + '].value=this.value; updateSidebar()"></div>' +
+      '<div class="form-group"><label>Tipo de conexi\u00F3n</label>' +
+        '<select onchange="state.voltages[' + i + '].type=this.value; renderVoltageRows(); updateSidebar()">' +
+          '<option value="tri"' + triSel + '>Trif\u00E1sico 3\u00D8 (3 entradas)</option>' +
+          '<option value="mono"' + monoSel + '>Monof\u00E1sico 1\u00D8 (1 entrada)</option>' +
+        '</select></div>' +
+      '<div class="form-group" style="align-items:center;justify-content:flex-end;padding-top:18px;">' + badge + '</div>';
+    container.appendChild(row);
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// CURRENTS
+// ═══════════════════════════════════════════════════════════
+function changeSingle(d) {
+  state.singlePhase = Math.max(0, state.singlePhase + d);
+  el('single-count').textContent = state.singlePhase;
+  renderCurrentSummary();
+  updateSidebar();
+}
+function changeThree(d) {
+  state.threePhase = Math.max(0, state.threePhase + d);
+  el('three-count').textContent = state.threePhase;
+  renderCurrentSummary();
+  updateSidebar();
+}
+
+function renderCurrentSummary() {
+  var total = state.singlePhase + state.threePhase * 3;
+  var e = el('current-summary');
+  if (!e) return;
+  if (total === 0) { e.innerHTML = ''; return; }
+  var html = '<div style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.75rem;">' +
+    '<div style="font-size:0.72rem;color:var(--text3);letter-spacing:2px;text-transform:uppercase;margin-bottom:0.5rem;">RESUMEN DE CORRIENTES</div>' +
+    '<div style="display:flex;gap:1rem;flex-wrap:wrap;">';
+  if (state.singlePhase > 0) html += '<div class="info-chip"><span class="dot"></span> ' + state.singlePhase + ' cargas 1\u00D8 = ' + state.singlePhase + ' entradas</div>';
+  if (state.threePhase > 0)  html += '<div class="info-chip" style="background:rgba(255,159,0,0.06);border-color:rgba(255,159,0,0.15);"><span class="dot" style="background:var(--warn)"></span> ' + state.threePhase + ' cargas 3\u00D8 = ' + (state.threePhase*3) + ' entradas</div>';
+  html += '<div class="info-chip" style="background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.15);"><span class="dot" style="background:var(--accent3)"></span> Total corrientes: ' + total + ' entradas</div></div></div>';
+  e.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIGITAL OUTPUTS
+// ═══════════════════════════════════════════════════════════
+function changeDO(d) {
+  state.digitalOutputs = Math.max(0, state.digitalOutputs + d);
+  el('do-count').textContent = state.digitalOutputs;
+  renderDOList();
+  updateSidebar();
+}
+
+function renderDOList() {
+  var container = el('do-list');
+  if (!container) return;
+  container.innerHTML = '';
+  for (var i = 0; i < state.digitalOutputs; i++) {
+    var item = document.createElement('div');
+    item.className = 'do-item';
+    item.innerHTML =
+      '<div class="do-num">DO' + String(i+1).padStart(2,'0') + '</div>' +
+      '<div style="flex:1;font-size:0.8rem;color:var(--text2);">Salida digital rel\u00E9</div>' +
+      '<div style="font-family:var(--mono);font-size:0.78rem;color:var(--accent3);">' + fmt(cfg.doPrice) + '</div>';
+    container.appendChild(item);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CALCULATIONS
+// ═══════════════════════════════════════════════════════════
+function calcVoltInputs() {
+  return state.voltages.reduce(function(s, v){ return s + (v.type === 'tri' ? 3 : 1); }, 0);
+}
+function calcCurrentInputs() {
+  return state.singlePhase + state.threePhase * 3;
+}
+
+function loadCfg() {
+  function gv(id, def) { var e = el(id); return e ? (parseFloat(e.value) || def) : def; }
+  function gs(id, def) { var e = el(id); return e ? (e.value || def) : def; }
+  cfg.basePrice   = gv('cfg-base-price',   500);
+  cfg.modulePrice = gv('cfg-module-price', 300);
+  cfg.chipPrice   = gv('cfg-chip-price',    25);
+  cfg.doPrice     = gv('cfg-do-price',      15);
+  cfg.ctPrice     = gv('cfg-ct-price',      45);
+  cfg.vtPrice     = gv('cfg-vt-price',      35);
+  cfg.serviceRate = gv('cfg-service-rate', 2.5);
+  cfg.iva         = gv('cfg-iva',           13);
+  cfg.currency    = gs('cfg-currency',     '$');
+}
+
+function updateSidebar() {
+  loadCfg();
+  var vi = calcVoltInputs();
+  var ci = calcCurrentInputs();
+  var ti = vi + ci;
+  var bi = 6;
+  var ei = Math.max(0, ti - bi);
+  var ch = ei > 0 ? Math.ceil(ei / 4) : 0;
+
+  // Transducers: 1 CT per 3 current signals (3-pole), 1 VT per voltage level
+  var ctQty = ci > 0 ? Math.ceil(ci / 3) : 0;
+  var vtQty = state.voltageCount;
+
+  var bp  = cfg.basePrice;
+  var mp  = state.version === 'full' ? cfg.modulePrice : 0;
+  var cc  = ch * cfg.chipPrice;
+  var ctc = ctQty * cfg.ctPrice;
+  var vtc = vtQty * cfg.vtPrice;
+  var dc  = state.digitalOutputs * cfg.doPrice;
+  var sub = bp + mp + cc + ctc + vtc + dc;
+  var svc = sub * (cfg.serviceRate / 100);
+  var iva = (sub + svc) * (cfg.iva / 100);
+  var tot = sub + svc + iva;
+
+  function st(id, v){ var e=el(id); if(e) e.textContent=v; }
+  st('sum-volt-inputs', vi);
+  st('sum-curr-inputs', ci);
+  st('sum-do', state.digitalOutputs);
+  st('sum-total-inputs', ti);
+  st('sum-required-inputs', ti);
+  st('sum-base-inputs', bi);
+  st('sum-extra-inputs', ei);
+  st('sum-chips', ch);
+  st('sum-chip-qty', ch);
+  st('sum-ct-qty', ctQty);
+  st('sum-vt-qty', vtQty);
+  st('sum-base-price', fmt(bp));
+  st('sum-module-price', fmt(mp));
+  st('sum-chip-cost', fmt(cc));
+  st('sum-ct-cost', fmt(ctc));
+  st('sum-vt-cost', fmt(vtc));
+  st('sum-do-cost', fmt(dc));
+  st('sum-svc-cost', fmt(svc));
+  st('sum-svc-pct', cfg.serviceRate);
+  st('sum-subtotal', fmt(sub));
+  st('sum-iva', fmt(iva));
+  st('sum-total', fmt(tot));
+  st('sum-iva-pct', cfg.iva);
+
+  renderChipIcons(ch, Math.max(Math.ceil(ti / 4), 1));
+}
+
+// alias so old onchange="" calls still work
+function recalculate() { updateSidebar(); }
+
+function renderChipIcons(active, total) {
+  var c = el('chip-icons');
+  if (!c) return;
+  c.innerHTML = '';
+  for (var i = 0; i < total; i++) {
+    var d = document.createElement('div');
+    d.className = 'chip-icon' + (i < active ? ' active' : '');
+    d.textContent = 'IC';
+    c.appendChild(d);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// DIAGRAM
+// ═══════════════════════════════════════════════════════════
+function renderDiagram() {
+  var container = el('diagram-content');
+  if (!container) return;
+  var vi = calcVoltInputs(), ci = calcCurrentInputs(), ti = vi + ci;
+  var ei = Math.max(0, ti - 6);
+  var ch = ei > 0 ? Math.ceil(ei / 4) : 0;
+
+  var voltPorts = '';
+  state.voltages.forEach(function(v, i){
+    var lbl = v.value ? v.value+'V' : 'V'+(i+1);
+    var typ = v.type === 'tri' ? '3\u00D8' : '1\u00D8';
+    var ent = v.type === 'tri' ? 3 : 1;
+    voltPorts += '<div class="port-item"><span class="port-dot accent"></span><span style="color:var(--text2);">' + lbl + ' ' + typ + ' (' + ent + ' entradas)</span></div>';
+  });
+
+  var currPorts = '';
+  for (var i = 0; i < state.singlePhase; i++)
+    currPorts += '<div class="port-item"><span class="port-dot"></span><span style="color:var(--text2);">Carga '+(i+1)+' 1\u00D8</span></div>';
+  for (var i = 0; i < state.threePhase; i++)
+    currPorts += '<div class="port-item"><span class="port-dot warn"></span><span style="color:var(--text2);">Motor/Carga '+(i+1)+' 3\u00D8 (3 ent.)</span></div>';
+
+  var doPorts = '';
+  for (var i = 0; i < state.digitalOutputs; i++)
+    doPorts += '<div class="port-item"><span class="port-dot" style="background:var(--accent3);box-shadow:0 0 6px var(--accent3)"></span><span style="color:var(--text2);">DO'+String(i+1).padStart(2,'0')+' \u2013 Rel\u00E9</span></div>';
+
+  var vBadge = state.version === 'full' ? 'badge-tri' : 'badge-mono';
+  var vLabel = state.version === 'full' ? 'FULL PANEL' : 'BASIC';
+
+  var html = '<div style="display:flex;gap:1.5rem;align-items:flex-start;flex-wrap:wrap;">';
+
+  // Sources
+  html += '<div style="display:flex;flex-direction:column;gap:0.75rem;min-width:160px;">';
+  if (state.voltages.length > 0)
+    html += '<div style="background:rgba(0,212,255,0.05);border:1px solid rgba(0,212,255,0.15);border-radius:8px;padding:0.75rem;">' +
+      '<div style="font-size:0.7rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.5rem;font-weight:600;">\u26A1 VOLTAJES</div>' +
+      '<div class="input-ports">' + voltPorts + '</div></div>';
+  if (ci > 0)
+    html += '<div style="background:rgba(255,159,0,0.04);border:1px solid rgba(255,159,0,0.15);border-radius:8px;padding:0.75rem;">' +
+      '<div style="font-size:0.7rem;color:var(--warn);letter-spacing:2px;margin-bottom:0.5rem;font-weight:600;">\u301C CORRIENTES</div>' +
+      '<div class="input-ports">' + currPorts + '</div></div>';
+  html += '</div>';
+
+  html += '<div style="display:flex;align-items:center;color:var(--border2);font-size:1.5rem;padding-top:1rem;">\u2192</div>';
+
+  // Main device
+  html += '<div class="device-box" style="min-width:200px;">' +
+    '<div class="device-name">\u26A1 ENERGY MONITOR</div>' +
+    '<div style="text-align:center;margin-bottom:0.5rem;"><span class="badge ' + vBadge + '" style="font-size:0.65rem;">' + vLabel + '</span></div>' +
+    '<div class="input-ports">' +
+      '<div class="port-item"><span class="port-dot accent"></span><span style="color:var(--text2);">6 entradas integradas</span></div>' +
+      (ch > 0 ? '<div class="port-item"><span class="port-dot"></span><span style="color:var(--text2);">' + ch + ' chips adicionales</span></div>' : '') +
+      (state.digitalOutputs > 0 ? '<div class="port-item"><span class="port-dot" style="background:var(--accent3);box-shadow:0 0 6px var(--accent3)"></span><span style="color:var(--text2);">' + state.digitalOutputs + ' salidas digitales</span></div>' : '') +
+    '</div>' +
+    '<div style="margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid var(--border);text-align:center;font-family:var(--mono);font-size:0.75rem;color:var(--text3);">Total: ' + ti + ' entradas 4-20mA</div>' +
+  '</div>';
+
+  if (state.version === 'full') {
+    html += '<div style="display:flex;align-items:center;color:var(--border2);font-size:1.5rem;padding-top:1rem;">\u2192</div>' +
+      '<div class="module-box" style="min-width:180px;">' +
+        '<div class="module-name">\uD83D\uDCE6 FULL PANEL<br>MODULE</div>' +
+        '<div class="input-ports">' +
+          '<div class="port-item"><span class="port-dot warn"></span><span style="color:var(--text2);">Entradas extra \u00D7' + ei + '</span></div>' +
+          '<div class="port-item"><span class="port-dot warn"></span><span style="color:var(--text2);">' + ch + ' chips \u00D7 4 entradas</span></div>' +
+        '</div></div>';
+  }
+
+  if (state.digitalOutputs > 0) {
+    html += '<div style="display:flex;align-items:flex-start;gap:0.5rem;padding-top:1rem;">' +
+      '<div style="display:flex;align-items:center;color:var(--border2);font-size:1.2rem;">\u2192</div>' +
+      '<div style="background:rgba(0,255,136,0.04);border:1px solid rgba(0,255,136,0.15);border-radius:8px;padding:0.75rem;min-width:140px;">' +
+        '<div style="font-size:0.7rem;color:var(--accent3);letter-spacing:2px;margin-bottom:0.5rem;font-weight:600;">\u2191 SALIDAS DIG.</div>' +
+        '<div class="input-ports">' + doPorts + '</div></div></div>';
+  }
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:0.75rem;flex-wrap:wrap;margin-top:1.25rem;padding-top:1rem;border-top:1px solid var(--border);">' +
+    '<div class="info-chip">\u26A1 ' + vi + ' entradas de voltaje</div>' +
+    '<div class="info-chip">\u301C ' + ci + ' entradas de corriente</div>' +
+    '<div class="info-chip" style="background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.15);">\uD83D\uDCCA ' + ti + ' entradas totales 4-20mA</div>' +
+    '<div class="info-chip" style="background:rgba(255,159,0,0.06);border-color:rgba(255,159,0,0.2);">\uD83D\uDD32 ' + ch + ' chips extra</div>' +
+    (state.digitalOutputs > 0 ? '<div class="info-chip" style="background:rgba(0,255,136,0.06);border-color:rgba(0,255,136,0.2);">\u2191 ' + state.digitalOutputs + ' salidas digitales</div>' : '') +
+  '</div>';
+
+  container.innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════════
+// SETTINGS MODAL
+// ═══════════════════════════════════════════════════════════
+function openSettings() {
+  el('settings-modal').classList.add('open');
+  setTimeout(updatePdfPreview, 50);
+}
+function closeSettings() {
+  el('settings-modal').classList.remove('open');
+}
+function saveSettings() {
+  loadCfg();
+  updateSidebar();
+  renderDOList();
+  closeSettings();
+}
+
+function exportSettingsJson() {
+  loadCfg();
+  var data = {
+    prices: {
+      basePrice:   cfg.basePrice,
+      modulePrice: cfg.modulePrice,
+      chipPrice:   cfg.chipPrice,
+      doPrice:     cfg.doPrice,
+      ctPrice:     cfg.ctPrice,
+      vtPrice:     cfg.vtPrice,
+      iva:         cfg.iva,
+      currency:    cfg.currency
+    },
+    company: {
+      name:   (el('cfg-my-company')||{value:''}).value,
+      cedula: (el('cfg-my-cedula') ||{value:''}).value,
+      phone:  (el('cfg-my-phone')  ||{value:''}).value,
+      email:  (el('cfg-my-email')  ||{value:''}).value
+    },
+    pdfColors: {
+      accent:    (el('cfg-pdf-accent')    ||{value:'#00d4ff'}).value,
+      dark:      (el('cfg-pdf-dark')      ||{value:'#0a0e14'}).value,
+      secondary: (el('cfg-pdf-secondary') ||{value:'#1e3250'}).value,
+      text:      (el('cfg-pdf-text')      ||{value:'#dce4f0'}).value,
+      row1:      (el('cfg-pdf-row1')      ||{value:'#0d1422'}).value,
+      row2:      (el('cfg-pdf-row2')      ||{value:'#111a28'}).value
+    }
+  };
+  var json = JSON.stringify(data, null, 2);
+  var blob = new Blob([json], {type: 'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'energymonitor.json';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════════════════════
+// LOGO UPLOAD
+// ═══════════════════════════════════════════════════════════
+function loadLogo(input, previewId, dataKey) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var preview = el(previewId);
+    if (preview) { preview.src = e.target.result; preview.style.display = 'block'; }
+    var ph = el(previewId.replace('preview','ph'));
+    if (ph) ph.style.display = 'none';
+    if (dataKey === 'logo-company-data') logoCompanyData = e.target.result;
+    if (dataKey === 'logo-product-data') logoProductData = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// ═══════════════════════════════════════════════════════════
+// PDF STYLE CONFIG
+// ═══════════════════════════════════════════════════════════
+var PDF_THEMES = [
+  { name:'Oscuro',    accent:'#00d4ff', dark:'#0a0e14', secondary:'#1e3250', text:'#dce4f0', row1:'#0d1422', row2:'#111a28' },
+  { name:'Corporativo', accent:'#2563eb', dark:'#1e293b', secondary:'#334155', text:'#f1f5f9', row1:'#1e293b', row2:'#263144' },
+  { name:'Verde',     accent:'#10b981', dark:'#064e3b', secondary:'#065f46', text:'#ecfdf5', row1:'#052e1c', row2:'#063825' },
+  { name:'Rojo',      accent:'#ef4444', dark:'#1c0a0a', secondary:'#7f1d1d', text:'#fef2f2', row1:'#1c0a0a', row2:'#2a0f0f' },
+  { name:'Claro',     accent:'#0369a1', dark:'#f8fafc', secondary:'#e2e8f0', text:'#0f172a', row1:'#f1f5f9', row2:'#e2e8f0' }
+];
+
+function hexToRgb(hex) {
+  hex = hex.replace('#','');
+  if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  var n = parseInt(hex, 16);
+  return [n>>16 & 255, n>>8 & 255, n & 255];
+}
+
+function rgbToHex(r,g,b) {
+  return '#' + [r,g,b].map(function(v){ return ('0'+v.toString(16)).slice(-2); }).join('');
+}
+
+function loadPdfColors() {
+  return {
+    ACC:  hexToRgb((el('cfg-pdf-accent')||{value:'#00d4ff'}).value),
+    DARK: hexToRgb((el('cfg-pdf-dark')||{value:'#0a0e14'}).value),
+    SEC:  hexToRgb((el('cfg-pdf-secondary')||{value:'#1e3250'}).value),
+    TXT:  hexToRgb((el('cfg-pdf-text')||{value:'#dce4f0'}).value),
+    ROW1: hexToRgb((el('cfg-pdf-row1')||{value:'#0d1422'}).value),
+    ROW2: hexToRgb((el('cfg-pdf-row2')||{value:'#111a28'}).value)
+  };
+}
+
+function applyTheme(t) {
+  function set(id, hex) { var e=el(id); if(e){e.value=hex;} var h=el(id+'-hex'); if(h)h.value=hex; }
+  set('cfg-pdf-accent', t.accent);
+  set('cfg-pdf-dark', t.dark);
+  set('cfg-pdf-secondary', t.secondary);
+  set('cfg-pdf-text', t.text);
+  set('cfg-pdf-row1', t.row1);
+  set('cfg-pdf-row2', t.row2);
+  updatePdfPreview();
+}
+
+function syncColorFromHex(pickerId, hexId) {
+  var hexEl = el(hexId);
+  if (!hexEl) return;
+  var val = hexEl.value.trim();
+  if (/^#[0-9a-fA-F]{6}$/.test(val)) {
+    var picker = el(pickerId);
+    if (picker) picker.value = val;
+    updatePdfPreview();
+  }
+}
+
+function buildThemePresets() {
+  var container = el('theme-presets');
+  if (!container) return;
+  container.innerHTML = '';
+  PDF_THEMES.forEach(function(t, i) {
+    var btn = document.createElement('div');
+    btn.title = t.name;
+    btn.style.cssText = 'cursor:pointer;border-radius:6px;overflow:hidden;border:2px solid transparent;transition:all 0.2s;';
+    btn.innerHTML =
+      '<div style="background:' + t.dark + ';padding:4px 3px 2px;">' +
+        '<div style="height:5px;background:' + t.accent + ';border-radius:2px;margin-bottom:3px;"></div>' +
+        '<div style="display:flex;gap:2px;">' +
+          '<div style="flex:1;height:3px;background:' + t.accent + '44;border-radius:1px;"></div>' +
+          '<div style="flex:1;height:3px;background:' + t.secondary + ';border-radius:1px;"></div>' +
+        '</div>' +
+        '<div style="font-size:8px;color:' + t.accent + ';font-weight:700;margin-top:3px;text-align:center;letter-spacing:0.5px;">' + t.name + '</div>' +
+      '</div>';
+    btn.addEventListener('click', function(){ applyTheme(t); });
+    btn.addEventListener('mouseenter', function(){ btn.style.borderColor = t.accent; });
+    btn.addEventListener('mouseleave', function(){ btn.style.borderColor = 'transparent'; });
+    container.appendChild(btn);
+  });
+}
+
+function updatePdfPreview() {
+  // Sync hex inputs from color pickers
+  ['cfg-pdf-accent','cfg-pdf-dark','cfg-pdf-secondary','cfg-pdf-text','cfg-pdf-row1','cfg-pdf-row2'].forEach(function(id){
+    var picker = el(id); var hexEl = el(id+'-hex');
+    if (picker && hexEl) hexEl.value = picker.value;
+  });
+
+  var canvas = el('pdf-style-preview');
+  if (!canvas || !canvas.getContext) return;
+  var ctx = canvas.getContext('2d');
+  var W = canvas.width, H = canvas.height;
+  var c = loadPdfColors();
+
+  function hex(rgb) { return rgbToHex(rgb[0],rgb[1],rgb[2]); }
+
+  ctx.clearRect(0,0,W,H);
+
+  // Header band
+  ctx.fillStyle = hex(c.DARK);
+  ctx.fillRect(0, 0, W, 38);
+
+  // Accent line
+  ctx.fillStyle = hex(c.ACC);
+  ctx.fillRect(0, 38, W, 2);
+
+  // Title
+  ctx.fillStyle = hex(c.ACC);
+  ctx.font = 'bold 13px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('COTIZACIÓN – ENERGY MONITOR', W/2, 16);
+  ctx.fillStyle = hex(c.TXT);
+  ctx.font = '8px Arial';
+  ctx.fillText('Fecha: ' + new Date().toLocaleDateString('es-CR'), W/2, 28);
+
+  // Two info boxes
+  var bw = (W-24)/2;
+  // Provider box header
+  ctx.fillStyle = hex(c.ACC);
+  ctx.fillRect(12, 44, bw, 10);
+  ctx.fillStyle = hex(c.DARK);
+  ctx.font = 'bold 7px Arial';
+  ctx.textAlign = 'left';
+  ctx.fillText('PROVEEDOR', 16, 51);
+  // Provider box body
+  ctx.fillStyle = hex(c.ROW1);
+  ctx.fillRect(12, 54, bw, 18);
+  ctx.fillStyle = hex(c.TXT);
+  ctx.font = '7px Arial';
+  ctx.fillText('Mi Empresa S.A.', 16, 63);
+  ctx.fillStyle = hex(c.TXT); ctx.globalAlpha=0.6;
+  ctx.fillText('Céd: 3-101-000000', 16, 69);
+  ctx.globalAlpha=1;
+
+  // Client box header
+  ctx.fillStyle = hex(c.SEC);
+  ctx.fillRect(18+bw, 44, bw, 10);
+  ctx.fillStyle = hex(c.ACC);
+  ctx.font = 'bold 7px Arial';
+  ctx.fillText('CLIENTE', 22+bw, 51);
+  // Client box body
+  ctx.fillStyle = hex(c.ROW2);
+  ctx.fillRect(18+bw, 54, bw, 18);
+  ctx.fillStyle = hex(c.TXT);
+  ctx.font = '7px Arial';
+  ctx.fillText('Empresa Cliente S.A.', 22+bw, 63);
+  ctx.fillStyle = hex(c.TXT); ctx.globalAlpha=0.6;
+  ctx.fillText('Contacto: Juan Pérez', 22+bw, 69);
+  ctx.globalAlpha=1;
+
+  // Section header bar
+  ctx.fillStyle = hex(c.DARK);
+  ctx.fillRect(12, 76, W-24, 9);
+  ctx.fillStyle = hex(c.ACC);
+  ctx.fillRect(12, 76, 3, 9);
+  ctx.font = 'bold 7px Arial';
+  ctx.fillStyle = hex(c.ACC);
+  ctx.fillText('DESGLOSE DE PRECIOS', 18, 82);
+
+  // Table rows
+  var rows = ['Energy Monitor (base)', 'Módulo Full Panel', 'Chips de medición'];
+  rows.forEach(function(r, i) {
+    var ry = 85 + i*11;
+    ctx.fillStyle = i%2===0 ? hex(c.ROW1) : hex(c.ROW2);
+    ctx.fillRect(12, ry, W-24, 10);
+    ctx.fillStyle = hex(c.TXT);
+    ctx.font = '6.5px Arial';
+    ctx.fillText(r, 16, ry+7);
+    ctx.fillStyle = hex(c.ACC);
+    ctx.font = 'bold 6.5px Arial';
+    ctx.textAlign = 'right';
+    ctx.fillText('$500.00', W-16, ry+7);
+    ctx.textAlign = 'left';
+  });
+}
+
+// ═══════════════════════════════════════════════════════════
+// PDF PREVIEW
+// ═══════════════════════════════════════════════════════════
+var _lastPdfDataUri = null;
+var _lastQuoteNum   = null;
+
+function openPreview() {
+  if (!window.jspdf) { alert('Libreria jsPDF no disponible. Verifique conexion a internet.'); return; }
+  // Show modal + loading state
+  el('preview-modal').classList.add('open');
+  el('preview-loading').style.display = 'flex';
+  el('preview-iframe').style.display  = 'none';
+  el('preview-quote-num').textContent  = '';
+
+  // Small timeout so the modal paints before we do heavy work
+  setTimeout(function() {
+    try {
+      var result = buildPDFDoc(); // returns {dataUri, quoteNum}
+      _lastPdfDataUri = result.dataUri;
+      _lastQuoteNum   = result.quoteNum;
+      el('preview-quote-num').textContent = result.quoteNum;
+      var iframe = el('preview-iframe');
+      iframe.src = result.dataUri;
+      iframe.style.display = 'block';
+      el('preview-loading').style.display = 'none';
+    } catch(e) {
+      el('preview-loading').innerHTML =
+        '<div style="color:var(--danger);font-family:var(--head);letter-spacing:1px;">ERROR AL GENERAR VISTA PREVIA</div>' +
+        '<div style="color:var(--text2);font-size:0.8rem;margin-top:0.5rem;">' + e.message + '</div>';
+    }
+  }, 80);
+}
+
+function closePreview() {
+  el('preview-modal').classList.remove('open');
+  // Clear iframe src to free memory
+  setTimeout(function(){ el('preview-iframe').src = ''; }, 300);
+}
+
+function downloadFromPreview() {
+  if (_lastPdfDataUri && _lastQuoteNum) {
+    var a = document.createElement('a');
+    a.href = _lastPdfDataUri;
+    a.download = 'Cotizacion_EnergyMonitor_' + _lastQuoteNum + '.pdf';
+    a.click();
+  } else {
+    generatePDF();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// PDF GENERATION
+// ═══════════════════════════════════════════════════════════
+function generatePDF() {
+  if (!window.jspdf) { alert('Libreria jsPDF no disponible. Verifique conexion a internet.'); return; }
+  loadCfg();
+  var result = buildPDFDoc();
+  result.doc.save('Cotizacion_EnergyMonitor_' + result.quoteNum + '.pdf');
+}
+
+function buildPDFDoc() {
+  loadCfg();
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF({ orientation:'portrait', unit:'mm', format:'a4' });
+  var W=210, H=297, M=20, CW=W-M*2;
+
+  // Color palette — from user settings
+  var PC = loadPdfColors();
+  var DARK=PC.DARK, ACC=PC.ACC, LG=PC.TXT, MG=[180,190,205];
+  var BRD=[50,65,90], WARN=[255,159,0], DRK=[5,10,20];
+  var SEC=PC.SEC;
+  var ROW1=PC.ROW1, ROW2=PC.ROW2;
+
+  function fc(c){ doc.setFillColor(c[0],c[1],c[2]); }
+  function tc(c){ doc.setTextColor(c[0],c[1],c[2]); }
+  function dc(c){ doc.setDrawColor(c[0],c[1],c[2]); }
+
+  var pageNum = 1;
+  var FOOTER_H = 18; // reserved height at bottom for footer
+  var SAFE_BOTTOM = H - FOOTER_H;
+
+  function drawFooter() {
+    var fy = H - 14;
+    fc(DARK); doc.rect(0, fy-2, W, 16, 'F');
+    fc(ACC);  doc.rect(0, fy-2, W, 0.8, 'F');
+    tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+    doc.text((el('cfg-my-company')||{value:''}).value||'Energy Monitor Systems', M, fy+4);
+    doc.text('Generado: '+dstr, W/2, fy+4, {align:'center'});
+    doc.text(qnum+' | P\u00E1g. '+pageNum, W-M, fy+4, {align:'right'});
+  }
+
+  function newPage() {
+    drawFooter();
+    doc.addPage();
+    pageNum++;
+    // Continuation header
+    fc(DARK); doc.rect(0,0,W,14,'F');
+    fc(ACC);  doc.rect(0,14,W,1,'F');
+    tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text('ENERGY MONITOR \u2013 COTIZACI\u00D3N (continuaci\u00F3n) | P\u00E1g. '+pageNum, M, 9.5);
+    tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.text(qnum, W-M, 9.5, {align:'right'});
+    return 22;
+  }
+
+  // pageCheck: if adding 'need' mm would overflow, start a new page
+  function pageCheck(y, need) {
+    if (y + need > SAFE_BOTTOM) return newPage();
+    return y;
+  }
+
+  function secHdr(y, title){
+    y = pageCheck(y, 10);
+    fc(DARK); doc.rect(M,y,CW,8,'F');
+    fc(ACC);  doc.rect(M,y,3,8,'F');
+    tc(ACC);  doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text(title, M+7, y+5.5);
+    return y;
+  }
+
+  // ─ Header ─
+  fc(DARK); doc.rect(0,0,W,48,'F');
+  fc(ACC);  doc.rect(0,48,W,1.5,'F');
+
+  if (logoCompanyData) {
+    try { doc.addImage(logoCompanyData,'JPEG',M,8,32,16,'','FAST'); } catch(e){}
+  } else {
+    fc([20,35,58]); doc.roundedRect(M,8,40,20,3,3,'F');
+    tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+    doc.text((el('cfg-my-company')||{value:''}).value||'MI EMPRESA', M+2, 20, {maxWidth:36});
+  }
+
+  tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(18);
+  doc.text('COTIZACI\u00D3N', W/2, 20, {align:'center'});
+  doc.setFontSize(10); tc(MG);
+  doc.text('ENERGY MONITOR SYSTEM', W/2, 27, {align:'center'});
+
+  var now = new Date();
+  var mo = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  var dstr = now.getDate()+' de '+mo[now.getMonth()]+' de '+now.getFullYear();
+  var qnum = 'COT-'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+(Math.floor(Math.random()*900)+100);
+  doc.setFontSize(7.5); tc(MG);
+  doc.text('Fecha: '+dstr, W-M, 34, {align:'right'});
+  doc.text('No. Cotizaci\u00F3n: '+qnum, W-M, 39, {align:'right'});
+
+  if (logoProductData) {
+    try { doc.addImage(logoProductData,'JPEG',W-M-35,6,35,20,'','FAST'); } catch(e){}
+  }
+
+  var y = 58;
+
+  // ─ Company boxes ─
+  function gv(id){ return (el(id)||{value:''}).value||''; }
+  var myC=gv('cfg-my-company'), myCed=gv('cfg-my-cedula'), myPh=gv('cfg-my-phone'), myEm=gv('cfg-my-email');
+  var clC=gv('cfg-client-company'), clCed=gv('cfg-client-cedula'), clN=gv('cfg-client-name'), clEm=gv('cfg-client-email');
+  var bw = (CW-6)/2;
+
+  y = pageCheck(y, 36);
+  fc(ROW1); doc.roundedRect(M,y,bw,34,2,2,'F');
+  dc(BRD); doc.setLineWidth(0.3); doc.roundedRect(M,y,bw,34,2,2,'S');
+  fc(ACC);  doc.rect(M,y,bw,6,'F');
+  tc(DRK);  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.text('PROVEEDOR',M+3,y+4.3);
+  tc(LG);   doc.setFontSize(8.5); doc.text(myC||'Empresa Proveedora',M+3,y+13);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); tc(MG);
+  if(myCed)  doc.text('C\u00E9d. Jur\u00EDdica: '+myCed, M+3,y+19);
+  if(myPh)   doc.text('Tel: '+myPh, M+3,y+24.5);
+  if(myEm)   doc.text('Email: '+myEm, M+3,y+29.5);
+
+  var cx=M+bw+6;
+  fc(ROW2); doc.roundedRect(cx,y,bw,34,2,2,'F');
+  dc(BRD); doc.roundedRect(cx,y,bw,34,2,2,'S');
+  fc(SEC); doc.rect(cx,y,bw,6,'F');
+  tc(ACC);  doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.text('CLIENTE',cx+3,y+4.3);
+  tc(LG);   doc.setFontSize(8.5); doc.text(clC||'Empresa Cliente',cx+3,y+13);
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); tc(MG);
+  if(clCed) doc.text('C\u00E9d. Jur\u00EDdica: '+clCed, cx+3,y+19);
+  if(clN)   doc.text('Contacto: '+clN, cx+3,y+24.5);
+  if(clEm)  doc.text('Email: '+clEm, cx+3,y+29.5);
+  y+=42;
+
+  // ─ Config Summary ─
+  y = secHdr(y,'CONFIGURACI\u00D3N DEL SISTEMA'); y+=10;
+  y = pageCheck(y, 10);
+  var vc=state.version==='full'?WARN:ACC;
+  fc(vc); doc.roundedRect(M,y,56,8,2,2,'F');
+  tc(DRK); doc.setFont('helvetica','bold'); doc.setFontSize(8);
+  doc.text('VERSI\u00D3N: '+(state.version==='full'?'FULL PANEL':'BASIC'),M+4,y+5.3);
+  y+=14;
+
+  var vi=calcVoltInputs(), ci=calcCurrentInputs(), ti=vi+ci;
+  var ei=Math.max(0,ti-6), ch=ei>0?Math.ceil(ei/4):0;
+  var ctQty2 = ci>0 ? Math.ceil(ci/3) : 0;
+  var vtQty2 = state.voltageCount;
+
+  var specs=[
+    ['Niveles de voltaje monitoreados', String(state.voltageCount)],
+    ['Entradas de voltaje (4-20 mA)', String(vi)],
+    ['Cargas monof\u00E1sicas', String(state.singlePhase)],
+    ['Cargas trif\u00E1sicas', String(state.threePhase)],
+    ['Entradas de corriente (4-20 mA)', String(ci)],
+    ['Salidas digitales', String(state.digitalOutputs)],
+    ['TOTAL entradas 4-20 mA', String(ti)],
+    ['Entradas integradas (base)', '6'],
+    ['Entradas adicionales requeridas', String(ei)],
+    ['Chips de medici\u00F3n adicionales', String(ch)],
+    ['Transductores de corriente (3 polos)', String(ctQty2)],
+    ['Transductores de voltaje', String(vtQty2)]
+  ];
+  var colW=CW/2;
+  var rowsH = Math.ceil(specs.length/2)*8;
+  y = pageCheck(y, rowsH);
+  specs.forEach(function(row,i){
+    var col=i%2, rx=M+col*colW, ry=y+Math.floor(i/2)*8;
+    var r=col===0?ROW1[0]:ROW2[0], g=col===0?ROW1[1]:ROW2[1], b=col===0?ROW1[2]:ROW2[2];
+    fc([r,g,b]); doc.rect(rx,ry,colW-1,7.5,'F');
+    tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.text(row[0],rx+3,ry+5);
+    tc(ACC); doc.setFont('helvetica','bold'); doc.text(row[1],rx+colW-5,ry+5,{align:'right'});
+  });
+  y+=rowsH+6;
+
+  // ─ Voltage Table ─
+  if(state.voltages.length>0){
+    y = secHdr(y,'DETALLE DE VOLTAJES'); y+=10;
+    // table header
+    y = pageCheck(y, 7);
+    fc(ACC); doc.rect(M,y,CW,7,'F');
+    tc(DRK); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.text('NIVEL',M+3,y+4.8); doc.text('VALOR',M+30,y+4.8);
+    doc.text('TIPO CONEXI\u00D3N',M+65,y+4.8); doc.text('ENTRADAS',M+125,y+4.8);
+    doc.text('TRANSDUCTOR VT',M+145,y+4.8);
+    y+=7;
+    state.voltages.forEach(function(v,i){
+      y = pageCheck(y, 7);
+      var r=i%2===0?ROW1[0]:ROW2[0], g=i%2===0?ROW1[1]:ROW2[1], b=i%2===0?ROW1[2]:ROW2[2];
+      fc([r,g,b]); doc.rect(M,y,CW,7,'F');
+      tc(LG); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+      doc.text('Voltaje '+(i+1),M+3,y+4.8);
+      doc.text(v.value?v.value+' V':'N/D',M+30,y+4.8);
+      if(v.type==='tri'){tc(WARN);}else{tc(ACC);}
+      doc.text(v.type==='tri'?'Trif\u00E1sico 3\u00D8':'Monof\u00E1sico 1\u00D8',M+65,y+4.8);
+      tc(LG); doc.text(v.type==='tri'?'3':'1',M+130,y+4.8,{align:'center'});
+      tc(ACC); doc.setFont('helvetica','bold'); doc.text('1 VT',M+155,y+4.8,{align:'center'});
+      y+=7;
+    });
+    y+=4;
+  }
+
+  // ─ Current Transducer note ─
+  if(ci > 0){
+    y = secHdr(y,'TRANSDUCTORES DE CORRIENTE'); y+=10;
+    y = pageCheck(y, 7);
+    fc(ACC); doc.rect(M,y,CW,7,'F');
+    tc(DRK); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.text('SEÑALES DE CORRIENTE',M+3,y+4.8);
+    doc.text('POLOS USADOS',M+90,y+4.8,{align:'center'});
+    doc.text('TRANSDUCTORES CT (3 polos)',M+CW-3,y+4.8,{align:'right'});
+    y+=7;
+    y = pageCheck(y, 8);
+    fc(ROW1); doc.rect(M,y,CW,8,'F');
+    tc(LG); doc.setFont('helvetica','normal'); doc.setFontSize(7.5);
+    doc.text('Total señales de corriente: '+ci, M+3, y+5.3);
+    doc.text(String(ci), M+90, y+5.3, {align:'center'});
+    tc(ACC); doc.setFont('helvetica','bold');
+    doc.text(ctQty2+' CT', M+CW-3, y+5.3, {align:'right'});
+    y+=8;
+    y = pageCheck(y, 7);
+    fc(ROW2); doc.rect(M,y,CW,7,'F');
+    tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(7);
+    doc.text('Nota: cada transductor de corriente tiene 3 polos. Con '+ci+' señales se requieren '+ctQty2+' transductores ('+((ctQty2*3)-ci)+' polo(s) libre(s)).',M+3,y+4.5,{maxWidth:CW-6});
+    y+=8; y+=4;
+  }
+
+  // ─ Pricing ─
+  y = secHdr(y,'DESGLOSE DE PRECIOS'); y+=10;
+  var sym=cfg.currency, bp2=cfg.basePrice, mp2=state.version==='full'?cfg.modulePrice:0;
+  var cc2=ch*cfg.chipPrice;
+  var ctc2=ctQty2*cfg.ctPrice, vtc2=vtQty2*cfg.vtPrice;
+  var dc2=state.digitalOutputs*cfg.doPrice;
+  var sub=bp2+mp2+cc2+ctc2+vtc2+dc2;
+  var svc2=sub*(cfg.serviceRate/100);
+  var iva2=(sub+svc2)*(cfg.iva/100), tot=sub+svc2+iva2;
+
+  var prows=[['Energy Monitor (unidad base)','1',fmtN(bp2,sym),fmtN(bp2,sym)]];
+  if(state.version==='full') prows.push(['M\u00F3dulo Full Panel (expansi\u00F3n)','1',fmtN(mp2,sym),fmtN(mp2,sym)]);
+  if(ch>0)   prows.push(['Chip de medici\u00F3n (4 entradas/chip)',String(ch),fmtN(cfg.chipPrice,sym),fmtN(cc2,sym)]);
+  if(vtQty2>0) prows.push(['Transductor de voltaje (1 nivel c/u)',String(vtQty2),fmtN(cfg.vtPrice,sym),fmtN(vtc2,sym)]);
+  if(ctQty2>0) prows.push(['Transductor de corriente (3 polos)',String(ctQty2),fmtN(cfg.ctPrice,sym),fmtN(ctc2,sym)]);
+  if(state.digitalOutputs>0) prows.push(['Salida digital (rel\u00E9)',String(state.digitalOutputs),fmtN(cfg.doPrice,sym),fmtN(dc2,sym)]);
+  if(cfg.serviceRate>0) prows.push(['Configuraci\u00F3n de plataforma ('+cfg.serviceRate+'%)', '—', '—', fmtN(svc2,sym)]);
+
+  // Table header
+  y = pageCheck(y, 7);
+  fc(ACC); doc.rect(M,y,CW,7,'F');
+  tc(DRK); doc.setFont('helvetica','bold'); doc.setFontSize(7);
+  doc.text('DESCRIPCI\u00D3N',M+3,y+4.8);
+  doc.text('CANT.',M+103,y+4.8,{align:'center'});
+  doc.text('P.UNIT.',M+138,y+4.8,{align:'right'});
+  doc.text('TOTAL',M+CW-3,y+4.8,{align:'right'});
+  y+=7;
+
+  prows.forEach(function(row,i){
+    y = pageCheck(y, 8);
+    var r=i%2===0?ROW1[0]:ROW2[0], g=i%2===0?ROW1[1]:ROW2[1], b=i%2===0?ROW1[2]:ROW2[2];
+    fc([r,g,b]); doc.rect(M,y,CW,8,'F');
+    tc(LG); doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.text(row[0],M+3,y+5.3,{maxWidth:90});
+    tc(ACC); doc.text(row[1],M+103,y+5.3,{align:'center'});
+    tc(LG);  doc.text(row[2],M+138,y+5.3,{align:'right'});
+    doc.setFont('helvetica','bold'); doc.text(row[3],M+CW-3,y+5.3,{align:'right'});
+    y+=8;
+  });
+  y+=4;
+
+  // Totals box
+  y = pageCheck(y, 36);
+  var tx=M+CW*0.5, tw=CW*0.5;
+  fc(ROW1); doc.roundedRect(tx,y,tw,36,2,2,'F');
+  dc(ACC); doc.setLineWidth(0.3); doc.roundedRect(tx,y,tw,36,2,2,'S');
+  tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.text('Subtotal:',tx+5,y+8);
+  tc(LG); doc.setFont('helvetica','bold'); doc.text(fmtN(sub,sym),tx+tw-5,y+8,{align:'right'});
+  tc(MG); doc.setFont('helvetica','normal'); doc.text('IVA ('+cfg.iva+'%):',tx+5,y+16);
+  tc(LG); doc.setFont('helvetica','bold'); doc.text(fmtN(iva2,sym),tx+tw-5,y+16,{align:'right'});
+  dc(BRD); doc.setLineWidth(0.4); doc.line(tx+4,y+21,tx+tw-4,y+21);
+  tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(10);
+  doc.text('TOTAL:',tx+5,y+30);
+  doc.text(fmtN(tot,sym),tx+tw-5,y+30,{align:'right'});
+  y+=40;
+
+  // Notes
+  y = pageCheck(y, 26);
+  fc(ROW1); doc.roundedRect(M,y,CW,22,2,2,'F');
+  dc(BRD); doc.roundedRect(M,y,CW,22,2,2,'S');
+  tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.text('NOTAS Y CONDICIONES',M+4,y+6);
+  tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
+  doc.text('\u2022 Esta cotizaci\u00F3n tiene validez de 30 d\u00EDas naturales a partir de la fecha de emisi\u00F3n.',M+4,y+11.5);
+  doc.text('\u2022 Los precios no incluyen instalaci\u00F3n ni puesta en marcha, salvo indicaci\u00F3n contraria.',M+4,y+16);
+  var cn=sym==='$'?'d\u00F3lares americanos (USD)':sym==='\u20A1'?'colones costarricenses (CRC)':'euros (EUR)';
+  doc.text('\u2022 Todos los precios est\u00E1n expresados en '+cn+'.',M+4,y+20.5);
+
+  // Footer on last page
+  drawFooter();
+
+  return {
+    doc: doc,
+    quoteNum: qnum,
+    dataUri: doc.output('datauristring')
+  };
+}// ═══════════════════════════════════════════════════════════
+// PANEL DIMENSIONS
+// ═══════════════════════════════════════════════════════════
+function openPanelDim() {
+  el('panel-dim-modal').classList.add('open');
+  setTimeout(renderPanelDiagram, 60);
+}
+function closePanelDim() {
+  el('panel-dim-modal').classList.remove('open');
+}
+
+function renderPanelDiagram() {
+  var wrap = el('panel-dim-svg-wrap');
+  var summary = el('panel-dim-summary');
+  if (!wrap) return;
+
+  // Read dimensions
+  function gd(id, def) { var e = el(id); return e ? (parseFloat(e.value) || def) : def; }
+  var DW  = gd('dim-device-w', 115);
+  var DH  = gd('dim-device-h', 130);
+  var MW  = gd('dim-module-w', 150);
+  var CTW = gd('dim-ct-w', 24);
+  var VTW = gd('dim-vt-w', 45);
+  var GAP = gd('dim-gap', 15);
+
+  // Pull current config from state
+  var isFull  = state.version === 'full';
+  var ctQty   = calcCurrentInputs() > 0 ? Math.ceil(calcCurrentInputs() / 3) : 0;
+  var vtQty   = state.voltageCount;
+
+  // Transducer height (tall enough for 3 cables)
+  var CTH = DH * 0.55;
+  var VTH = DH * 0.65;
+
+  // Scale: fit everything into ~800px wide canvas
+  var SCALE_BASE = 800;
+  // Elements left to right: [VTs...] [gap] [CTs...] [gap] [Device] [gap?] [Module?]
+  var totalMM = (vtQty * VTW) + (vtQty > 0 ? GAP : 0)
+              + (ctQty * CTW) + (ctQty > 0 ? GAP : 0)
+              + DW
+              + (isFull ? GAP + MW : 0);
+
+  // Fixed comfortable scale — SVG grows to full size, container scrolls/zooms
+  var scale = 2.8;//2.8;
+  var PX = function(mm) { return mm * scale; };
+  var SVG_W = totalMM * scale + 80;  // 80
+  var SVG_H = Math.max(DH * scale + 150, 300); //300
+
+  var BASELINE = SVG_H - 70; // bottom of all elements
+
+  // Colors
+  var C = {
+    bg:      '#0a0e14',
+    panel:   '#0f1826',
+    device:  '#0d1f35',
+    module:  '#1a1405',
+    ct:      '#0d2218',
+    vt:      '#1a0d05',
+    accent:  '#00d4ff',
+    warn:    '#ff9f00',
+    green:   '#00ff88',
+    text:    '#d8e8f5',
+    dim:     '#4a6a85',
+    grid:    '#1e2d45',
+    cable_a: '#ff4455',
+    cable_b: '#ffcc00',
+    cable_c: '#44aaff'
+  };
+
+  // SVG builder
+  var s = '';
+
+  function rect(x, y, w, h, fill, stroke, sw, rx) {
+    return '<rect x="'+ x +'" y="'+ y +'" width="'+ w +'" height="'+ h +'"'
+      + ' fill="'+ fill +'" stroke="'+ (stroke||'none') +'" stroke-width="'+ (sw||1) +'"'
+      + (rx ? ' rx="'+rx+'"' : '') + '/>';
+  }
+  function line(x1,y1,x2,y2,col,sw,dash) {
+    return '<line x1="'+ x1 +'" y1="'+ y1 +'" x2="'+ x2 +'" y2="'+ y2 +'"'
+      + ' stroke="'+ col +'" stroke-width="'+ (sw||1) +'"'
+      + (dash ? ' stroke-dasharray="'+ dash +'"' : '') + '/>';
+  }
+  function text(x, y, txt, col, fs, anchor, bold, rot) {
+    var tr = rot ? ' transform="rotate('+ rot +','+ x +','+ y +')"' : '';
+    return '<text x="'+ x +'" y="'+ y +'" fill="'+ col +'" font-size="'+ (fs||11) +'"'
+      + ' text-anchor="'+ (anchor||'middle') +'" font-family="Share Tech Mono,monospace"'
+      + (bold ? ' font-weight="bold"' : '') + tr + '>'
+      + txt + '</text>';
+  }
+  function dimArrow(x1, y, x2, col, label, above) {
+    var ay = above ? y - 18 : y + 18;
+    var ts = 9;
+    return line(x1, ay, x2, ay, col, 1)
+      + line(x1, ay-4, x1, ay+4, col, 1)
+      + line(x2, ay-4, x2, ay+4, col, 1)
+      + text((x1+x2)/2, above ? ay-5 : ay+12, label, col, ts);
+  }
+  function cable3(x, topY, bottomY, phaseLabel) {
+    var sp = PX(CTW) / 4;
+    var out = '';
+    var cols = [C.cable_a, C.cable_b, C.cable_c];
+    var labels = phaseLabel ? ['A','B','C'] : [];
+    for (var i = 0; i < 3; i++) {
+      out += '<line x1="'+ (x + sp*(i+1)) +'" y1="'+ topY +'" x2="'+ (x + sp*(i+1)) +'" y2="'+ bottomY +'"'
+        + ' stroke="'+ cols[i] +'" stroke-width="2" stroke-dasharray="4 2"/>';
+      if (labels.length)
+        out += text(x + sp*(i+1), topY - 6, labels[i], cols[i], 8);
+    }
+    return out;
+  }
+
+  s += '<svg xmlns="http://www.w3.org/2000/svg" width="'+ SVG_W +'" height="'+ SVG_H
+    + '" style="background:'+ C.bg +';border-radius:8px;display:block;max-width:100%;">';
+
+  // Grid dots
+  for (var gx = 0; gx < SVG_W; gx += 20)
+    for (var gy = 0; gy < SVG_H; gy += 20)
+      s += '<circle cx="'+gx+'" cy="'+gy+'" r="0.8" fill="'+C.grid+'"/>';
+
+  // ── Layout cursor ──
+  var cx = 30; // left margin
+
+  // ─── VOLTAGE TRANSDUCERS ───
+  var vtXs = [];
+  for (var v = 0; v < vtQty; v++) {
+    var vt_x = cx;
+    var vt_w = PX(VTW);
+    var vt_h = PX(VTH);
+    var vt_y = BASELINE - vt_h;
+    vtXs.push({ x: vt_x, w: vt_w, h: vt_h, y: vt_y });
+
+    // Body
+    s += rect(vt_x, vt_y, vt_w, vt_h, C.vt, C.warn, 1.5, 3);
+    // Top stripe
+    s += rect(vt_x, vt_y, vt_w, PX(8), C.warn+'33', C.warn, 0.5, 3);
+    // Label
+    s += text(vt_x + vt_w/2, vt_y + vt_h/2 + 4, 'VT '+(v+1), C.warn, 10, 'middle', true);
+    s += text(vt_x + vt_w/2, vt_y + vt_h/2 + 16, VTW+'mm', C.warn+'99', 8, 'middle');
+
+    // Cables coming in from top
+    var vsp = vt_w / 4;
+    var cCols = [C.cable_a, C.cable_b, C.cable_c];
+    for (var k = 0; k < 3; k++) {
+      s += '<line x1="'+(vt_x+vsp*(k+1))+'" y1="'+(vt_y-30)+'" x2="'+(vt_x+vsp*(k+1))+'" y2="'+vt_y+'"'
+        + ' stroke="'+cCols[k]+'" stroke-width="2" stroke-dasharray="4 2"/>';
+      s += text(vt_x + vsp*(k+1), vt_y - 33, ['A','B','C'][k], cCols[k], 8);
+    }
+
+    // Arrow label for VT width
+    s += dimArrow(vt_x, BASELINE + 12, vt_x + vt_w, BASELINE + 12, C.warn+'cc', false, VTW+'mm');
+
+    cx += vt_w + (v < vtQty-1 ? PX(4) : PX(GAP));
+  }
+
+  // ─── CURRENT TRANSDUCERS ───
+  var ctXs = [];
+  for (var ct = 0; ct < ctQty; ct++) {
+    var ct_x = cx;
+    var ct_w = PX(CTW);
+    var ct_h = PX(CTH);
+    var ct_y = BASELINE - ct_h;
+    ctXs.push({ x: ct_x, w: ct_w, h: ct_h, y: ct_y });
+
+    // Body
+    s += rect(ct_x, ct_y, ct_w, ct_h, C.ct, C.green, 1.5, 3);
+    // Top stripe
+    s += rect(ct_x, ct_y, ct_w, PX(8), C.green+'33', C.green, 0.5, 3);
+
+    // Internal dotted lines (core slots) — like the sketch
+    var slotH = (ct_h - PX(12)) / 4;
+    for (var sl = 0; sl < 3; sl++) {
+      var sy = ct_y + PX(12) + slotH * sl + slotH/2;
+      s += line(ct_x+4, sy, ct_x+ct_w-4, sy, C.green+'44', 1, '3 3');
+    }
+
+    // Cable entering top
+    s += cable3(ct_x, ct_y - 30, ct_y, true);
+
+    // Cable exiting bottom
+    s += cable3(ct_x, BASELINE, BASELINE + 28, false);
+
+    // Dimension arrow
+    s += dimArrow(ct_x, BASELINE + 12, ct_x + ct_w, BASELINE + 12, C.green+'cc', false);
+    s += text((ct_x + ct_x + ct_w)/2, BASELINE + 24, CTW+'mm', C.green+'99', 8);
+
+    // Label
+    s += text(ct_x + ct_w/2, ct_y + ct_h/2 + 4, 'CT'+(ct+1), C.green, 9, 'middle', true);
+
+    cx += ct_w + (ct < ctQty-1 ? PX(4) : PX(GAP));
+  }
+
+  if (ctQty === 0 && vtQty > 0) cx += 0; // already added gap
+
+  // ─── MAIN DEVICE ───
+  var dev_x = cx;
+  var dev_w = PX(DW);
+  var dev_h = PX(DH);
+  var dev_y = BASELINE - dev_h;
+
+  // Shadow
+  s += rect(dev_x+4, dev_y+4, dev_w, dev_h, '#00000066', 'none', 0, 6);
+  // Body
+  s += rect(dev_x, dev_y, dev_w, dev_h, C.device, C.accent, 2, 6);
+  // Top glow strip
+  s += rect(dev_x, dev_y, dev_w, 3, C.accent, 'none', 0, 0);
+  // Screen
+  var sc_x = dev_x + dev_w*0.12, sc_y = dev_y + dev_h*0.1;
+  var sc_w = dev_w * 0.7, sc_h = dev_h * 0.32;
+  s += rect(sc_x, sc_y, sc_w, sc_h, '#060d18', C.accent+'88', 1, 3);
+  s += text(sc_x + sc_w/2, sc_y + sc_h/2 + 4, 'DISPLAY', C.accent+'88', 8);
+  // LEDs row
+  var ledY = sc_y + sc_h + dev_h*0.1;
+  for (var ld = 0; ld < 5; ld++) {
+    var lx = dev_x + dev_w*(0.18 + ld*0.155);
+    s += '<circle cx="'+lx+'" cy="'+ledY+'" r="'+Math.max(3,dev_w*0.04)+'" fill="'+C.accent+'44" stroke="'+C.accent+'" stroke-width="1"/>';
+  }
+  // Label
+  s += text(dev_x + dev_w/2, dev_y + dev_h - 10, 'ENERGY MONITOR', C.accent, 9, 'middle', true);
+
+  // Dimension arrow
+  s += dimArrow(dev_x, BASELINE + 28, dev_x + dev_w, BASELINE + 28, C.accent, false);
+  s += text(dev_x + dev_w/2, BASELINE + 42, DW+'mm', C.accent+'cc', 9);
+
+  // Height dimension on left side
+  s += line(dev_x - 12, dev_y, dev_x - 12, BASELINE, C.accent+'88', 1);
+  s += line(dev_x - 16, dev_y, dev_x - 8, dev_y, C.accent+'88', 1);
+  s += line(dev_x - 16, BASELINE, dev_x - 8, BASELINE, C.accent+'88', 1);
+  s += text(dev_x - 22, dev_y + dev_h/2 + 4, DH+'mm', C.accent+'88', 8, 'middle', false, -90);
+
+  cx += dev_w;
+
+  // ─── FULL PANEL MODULE ───
+  if (isFull) {
+    // Puzzle connector
+    var conn_x = cx;
+    var conn_w = PX(GAP * 0.8);
+    var conn_y = dev_y + dev_h * 0.3;
+    var conn_h = dev_h * 0.4;
+    // wavy connector shape
+    s += '<path d="M '+ conn_x +' '+ conn_y
+      + ' L '+ (conn_x + conn_w*0.3) +' '+ conn_y
+      + ' C '+ (conn_x + conn_w*0.6) +' '+ conn_y +' '
+      + (conn_x + conn_w*0.6) +' '+ (conn_y + conn_h/3) +' '
+      + (conn_x + conn_w*0.5) +' '+ (conn_y + conn_h/2) +' '
+      + ' C '+ (conn_x + conn_w*0.4) +' '+ (conn_y + conn_h*0.67) +' '
+      + (conn_x + conn_w*0.6) +' '+ (conn_y + conn_h*0.67) +' '
+      + (conn_x + conn_w*0.5) +' '+ (conn_y + conn_h) +' '
+      + ' L '+ conn_x +' '+ (conn_y + conn_h)
+      + ' Z" fill="'+ C.accent+'22" stroke="'+ C.accent+'66" stroke-width="1"/>';
+
+    cx += PX(GAP);
+
+    var mod_x = cx;
+    var mod_w = PX(MW);
+    var mod_h = dev_h;
+    var mod_y = dev_y;
+
+    // Shadow
+    s += rect(mod_x+4, mod_y+4, mod_w, mod_h, '#00000066', 'none', 0, 6);
+    // Body
+    s += rect(mod_x, mod_y, mod_w, mod_h, C.module, C.warn, 2, 6);
+    // Top glow
+    s += rect(mod_x, mod_y, mod_w, 3, C.warn, 'none', 0, 0);
+    // Label
+    s += text(mod_x + mod_w/2, mod_y + mod_h/2 - 6, 'MÓDULO', C.warn, 10, 'middle', true);
+    s += text(mod_x + mod_w/2, mod_y + mod_h/2 + 10, 'FULL PANEL', C.warn, 10, 'middle', true);
+
+    // Dimension arrow
+    s += dimArrow(mod_x, BASELINE + 28, mod_x + mod_w, BASELINE + 28, C.warn, false);
+    s += text(mod_x + mod_w/2, BASELINE + 42, MW+'mm', C.warn+'cc', 9);
+
+    cx += mod_w;
+  }
+
+  // ─── TOTAL WIDTH SPAN ───
+  var totalPx = cx - 30;
+  var spY = 14;
+  s += line(30, spY, totalPx + 30, spY, C.text+'55', 1);
+  s += line(30, spY-5, 30, spY+5, C.text+'55', 1);
+  s += line(totalPx+30, spY-5, totalPx+30, spY+5, C.text+'55', 1);
+  var totalMM2 = totalMM;
+  s += text((30 + totalPx+30)/2, spY - 6, 'ANCHO TOTAL: ' + totalMM2.toFixed(0) + ' mm', C.text+'cc', 10, 'middle', true);
+
+  s += '</svg>';
+
+  wrap.innerHTML = s;
+
+  // ─── Summary chips ───
+  var totalH = DH; // device height is the tallest
+  var chips = [
+    { label: 'Ancho total', val: totalMM.toFixed(0)+' mm', col: '#00d4ff' },
+    { label: 'Alto requerido', val: totalH.toFixed(0)+' mm (dispositivo)', col: '#00d4ff' },
+    { label: 'Dispositivo principal', val: DW+'×'+DH+' mm', col: '#00d4ff' }
+  ];
+  if (isFull)  chips.push({ label: 'Módulo Full Panel', val: MW+'×'+DH+' mm', col: '#ff9f00' });
+  if (ctQty>0) chips.push({ label: ctQty+' transductor(es) CT', val: ctQty+'×'+CTW+' mm c/u', col: '#00ff88' });
+  if (vtQty>0) chips.push({ label: vtQty+' transductor(es) VT', val: vtQty+'×'+VTW+' mm c/u', col: '#ff9f00' });
+
+  summary.innerHTML = chips.map(function(c){
+    return '<div style="display:inline-flex;align-items:center;gap:0.4rem;background:'+c.col+'11;border:1px solid '+c.col+'44;border-radius:5px;padding:0.25rem 0.6rem;">'
+      + '<span style="font-size:0.7rem;color:'+c.col+'88;font-family:var(--head);letter-spacing:1px;text-transform:uppercase;">'+c.label+'</span>'
+      + '<span style="font-size:0.82rem;color:'+c.col+';font-family:var(--mono);">'+c.val+'</span>'
+    + '</div>';
+  }).join('');
+
+  // Auto-fit after render
+  setTimeout(panelZoomFit, 30);
+}
+
+// ─── ZOOM HELPERS ───────────────────────────────────────────
+function applyPanelZoom() {
+  var slider = el('panel-zoom-slider');
+  var zw = el('panel-dim-zoom-wrap');
+  if (!slider || !zw) return;
+  var z = parseFloat(slider.value);
+  zw.style.transform = 'scale(' + z + ')';
+  el('panel-zoom-pct').textContent = Math.round(z * 100) + '%';
+}
+
+function panelZoom(delta) {
+  var slider = el('panel-zoom-slider');
+  if (!slider) return;
+  var z = Math.min(3, Math.max(0.2, parseFloat(slider.value) + delta));
+  slider.value = z;
+  el('panel-zoom-pct').textContent = Math.round(z * 100) + '%';
+  applyPanelZoom();
+}
+
+function panelZoomFit() {
+  var scroll = el('panel-dim-scroll');
+  var wrap   = el('panel-dim-svg-wrap');
+  var slider = el('panel-zoom-slider');
+  if (!scroll || !wrap || !slider) return;
+  var svgEl = wrap.querySelector('svg');
+  if (!svgEl) return;
+  var availW = scroll.clientWidth  - 40;
+  var availH = scroll.clientHeight - 40;
+  var svgW = parseFloat(svgEl.getAttribute('width')  || 800);
+  var svgH = parseFloat(svgEl.getAttribute('height') || 300);
+  var fit = Math.min(availW / svgW, availH / svgH, 3);
+  fit = Math.max(fit, 0.2);
+  slider.value = fit.toFixed(3);
+  el('panel-zoom-pct').textContent = Math.round(fit * 100) + '%';
+  applyPanelZoom();
+}
+
+function panelZoomReset() {
+  var slider = el('panel-zoom-slider');
+  if (!slider) return;
+  slider.value = 1;
+  el('panel-zoom-pct').textContent = '100%';
+  applyPanelZoom();
+}
+
+
+</script>
+</body>
+</html>
