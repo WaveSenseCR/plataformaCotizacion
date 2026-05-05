@@ -141,6 +141,50 @@
 
   .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
 
+  /* ── DIAGRAM STRIP ── */
+  .diagram-strip {
+    background: var(--bg2);
+    border-bottom: 1px solid var(--border);
+    padding: 0.5rem 1.5rem;
+    position: relative;
+    z-index: 10;
+  }
+  .diagram-strip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    user-select: none;
+    padding: 0.2rem 0;
+  }
+  .diagram-strip-title {
+    font-family: var(--head);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .diagram-strip-body {
+    overflow: hidden;
+    max-height: 0;
+    transition: max-height 0.3s ease;
+  }
+  .diagram-strip-body.open {
+    max-height: 500px;
+    padding-top: 0.6rem;
+  }
+  .chevron {
+    display: inline-block;
+    transition: transform 0.25s;
+    color: var(--text3);
+    font-size: 0.75rem;
+  }
+  .chevron.open { transform: rotate(180deg); }
+
   /* ── LAYOUT ── */
   .main-layout {
     display: grid;
@@ -828,6 +872,24 @@
   </div>
 </header>
 
+<!-- DIAGRAM STRIP — always visible above all content -->
+<div class="diagram-strip">
+  <div class="diagram-strip-header" onclick="toggleDiagramStrip()">
+    <div class="diagram-strip-title">
+      <span class="pulse"></span>
+      📊 Diagrama del Sistema
+    </div>
+    <div style="display:flex;align-items:center;gap:0.75rem;">
+      <div id="diagram-strip-chips" style="display:flex;gap:0.4rem;flex-wrap:wrap;"></div>
+      <span style="font-family:var(--head);font-size:0.7rem;color:var(--text3);letter-spacing:1px;">VER/OCULTAR</span>
+      <span class="chevron open" id="diagram-chevron">▼</span>
+    </div>
+  </div>
+  <div class="diagram-strip-body open" id="diagram-strip-body">
+    <div id="diagram-content" style="min-height:60px;overflow-x:auto;"></div>
+  </div>
+</div>
+
 <!-- MAIN LAYOUT -->
 <div class="main-layout">
 
@@ -845,15 +907,6 @@
     <!-- TAB: GENERAL                                       -->
     <!-- ══════════════════════════════════════════════════ -->
     <div class="tab-panel active" id="tab-general">
-
-      <!-- DIAGRAMA siempre visible arriba -->
-      <div class="card" style="margin-bottom:0.85rem;">
-        <div class="card-header" style="margin-bottom:0.5rem;">
-          <div class="card-title"><span class="icon">📊</span> Diagrama del Sistema</div>
-          <span class="pulse"></span>
-        </div>
-        <div id="diagram-content" style="min-height:80px;"></div>
-      </div>
 
       <!-- Selección de Producto -->
       <div class="card">
@@ -1505,7 +1558,6 @@ document.addEventListener('DOMContentLoaded', function() {
     renderVoltageRows();
     applyBasicLock();
     updateSidebar();
-    renderDiagram();
     buildThemePresets();
     updatePdfPreview();
   });
@@ -1606,6 +1658,15 @@ function fmtN(n, sym) {
 }
 function el(id) { return document.getElementById(id); }
 
+function toggleDiagramStrip() {
+  var body    = el('diagram-strip-body');
+  var chevron = el('diagram-chevron');
+  if (!body) return;
+  var isOpen = body.classList.contains('open');
+  body.classList.toggle('open', !isOpen);
+  if (chevron) chevron.classList.toggle('open', !isOpen);
+}
+
 // ═══════════════════════════════════════════════════════════
 // TABS
 // ═══════════════════════════════════════════════════════════
@@ -1618,8 +1679,6 @@ function setTab(tab) {
   if (tabs[idx]) tabs[idx].classList.add('active');
   var panel = el('tab-' + tab);
   if (panel) panel.classList.add('active');
-  // Always refresh diagram when general is shown
-  if (tab === 'general') renderDiagram();
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1649,7 +1708,6 @@ function setVersion(v) {
   el('full-module-row').style.display = v === 'full' ? 'flex' : 'none';
   applyBasicLock();
   updateSidebar();
-  renderDiagram();
 }
 
 function applyBasicLock() {
@@ -1850,6 +1908,7 @@ function updateSidebar() {
   st('sum-iva-pct', cfg.iva);
 
   renderChipIcons(ch, Math.max(Math.ceil(ti / 4), 1));
+  renderDiagram();
 }
 
 // alias so old onchange="" calls still work
@@ -1954,6 +2013,19 @@ function renderDiagram() {
   '</div>';
 
   container.innerHTML = html;
+
+  // Update mini chips in the strip header
+  var chipsEl = el('diagram-strip-chips');
+  if (chipsEl) {
+    var vi2 = calcVoltInputs(), ci2 = calcCurrentInputs(), ti2 = vi2+ci2;
+    var ei2 = Math.max(0,ti2-6), ch2 = ei2>0?Math.ceil(ei2/4):0;
+    chipsEl.innerHTML =
+      '<span style="font-family:var(--mono);font-size:0.7rem;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.2);border-radius:4px;padding:0.15rem 0.45rem;color:var(--accent);">\u26A1'+vi2+' V</span>' +
+      '<span style="font-family:var(--mono);font-size:0.7rem;background:rgba(255,159,0,0.08);border:1px solid rgba(255,159,0,0.2);border-radius:4px;padding:0.15rem 0.45rem;color:var(--warn);">\u301C'+ci2+' I</span>' +
+      '<span style="font-family:var(--mono);font-size:0.7rem;background:rgba(0,255,136,0.08);border:1px solid rgba(0,255,136,0.2);border-radius:4px;padding:0.15rem 0.45rem;color:var(--accent3);">'+ti2+' in</span>' +
+      (state.digitalOutputs>0?'<span style="font-family:var(--mono);font-size:0.7rem;background:rgba(0,255,136,0.06);border:1px solid rgba(0,255,136,0.15);border-radius:4px;padding:0.15rem 0.45rem;color:var(--accent3);">\u2191'+state.digitalOutputs+' DO</span>':'') +
+      (ch2>0?'<span style="font-family:var(--mono);font-size:0.7rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.15);border-radius:4px;padding:0.15rem 0.45rem;color:var(--text2);">+'+ch2+' IC</span>':'');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════
