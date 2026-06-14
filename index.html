@@ -2601,8 +2601,9 @@ function buildPDFDoc() {
     try { doc.addImage(logoCompanyData,'JPEG',M,8,32,16,'','FAST'); } catch(e){}
   } else {
     fc([20,35,58]); doc.roundedRect(M,8,40,20,3,3,'F');
-    tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(8);
-    doc.text((el('cfg-my-company')||{value:''}).value||'MI EMPRESA', M+2, 20, {maxWidth:36});
+    tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(14);
+    doc.text('WaveSense Electronics', M+4, 17, {maxWidth:36});
+    //doc.text((el('cfg-my-company')||{value:''}).value||'MI EMPRESA', M+2, 20, {maxWidth:36});
   }
 
   tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(18);
