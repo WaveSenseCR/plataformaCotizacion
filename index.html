@@ -899,8 +899,9 @@
     <!-- TABS -->
     <div class="tabs">
       <div class="tab active" onclick="setTab('general')">🏠 General</div>
-      <div class="tab" onclick="setTab('mediciones')">⚡ Mediciones</div>
-      <div class="tab" onclick="setTab('outputs')">↑ Salidas</div>
+      <div class="tab" id="tab-btn-mediciones" onclick="setTab('mediciones')">⚡ Mediciones</div>
+      <div class="tab" id="tab-btn-outputs" onclick="setTab('outputs')">↑ Salidas</div>
+      <div class="tab" id="tab-btn-cargas" onclick="setTab('cargas')">📋 Cargas</div>
     </div>
 
     <!-- ══════════════════════════════════════════════════ -->
@@ -924,6 +925,33 @@
 
         <div id="product-description" style="background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:0.85rem;font-size:0.82rem;color:var(--text2);line-height:1.6;margin-bottom:1rem;">
           Sistema de monitoreo de voltajes y corrientes para paneles de control industriales. Mide señales 4-20 mA de voltaje y corriente para supervisión en tiempo real.
+        </div>
+
+        <!-- Modo de cotización -->
+        <div class="section-sep"><div class="sep-line"></div><div class="sep-text">Modo de Cotización</div><div class="sep-line"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;margin-bottom:1rem;">
+          <div id="mode-tabla-card" class="version-card selected" onclick="setQuoteMode('tabla')" style="border-color:var(--accent);">
+            <div class="v-icon">📋</div>
+            <div class="v-title" style="color:var(--accent);">DESDE TABLA</div>
+            <div class="v-desc">Las mediciones y salidas se toman de la tabla de cargas del panel.<br><span style="color:var(--accent);">Recomendado · automático</span></div>
+          </div>
+          <div id="mode-manual-card" class="version-card" onclick="setQuoteMode('manual')">
+            <div class="v-icon">🎛</div>
+            <div class="v-title">MANUAL</div>
+            <div class="v-desc">Configura las mediciones y salidas manualmente en las pestañas.<br><span style="color:var(--text3);">Libre · sin tabla</span></div>
+          </div>
+        </div>
+        <div id="mode-tabla-banner" style="display:flex;align-items:center;gap:0.75rem;background:rgba(0,212,255,0.06);border:1px solid rgba(0,212,255,0.2);border-radius:8px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
+          <span style="font-size:1.2rem;">📋</span>
+          <div>
+            <div style="font-family:var(--head);font-size:0.82rem;font-weight:700;color:var(--accent);letter-spacing:1px;">MODO TABLA ACTIVO</div>
+            <div style="font-size:0.73rem;color:var(--text2);margin-top:0.2rem;">Las pestañas Mediciones y Salidas reflejan los toggles de la tabla. Edítalas desde la pestaña <strong style="color:var(--accent);">📋 Cargas</strong>.</div>
+          </div>
+          <button class="btn btn-outline btn-sm" style="margin-left:auto;white-space:nowrap;" onclick="setTab('cargas')">Ir a tabla →</button>
+        </div>
+        <div id="mode-manual-banner" style="display:none;align-items:center;gap:0.75rem;background:rgba(255,159,0,0.05);border:1px solid rgba(255,159,0,0.2);border-radius:8px;padding:0.75rem 1rem;margin-bottom:0.5rem;">
+          <span style="font-size:1.2rem;">🎛</span>
+          <div style="font-size:0.73rem;color:var(--text2);">Modo manual activo. La tabla de cargas no afecta la cotización.</div>
         </div>
 
         <!-- Versión del dispositivo -->
@@ -956,12 +984,17 @@
     <!-- TAB: MEDICIONES                                    -->
     <!-- ══════════════════════════════════════════════════ -->
     <div class="tab-panel" id="tab-mediciones">
-      <div id="mediciones-lock-overlay" style="display:none;position:relative;">
-        <div style="background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.15);border-radius:10px;padding:1.5rem;text-align:center;">
-          <div style="font-size:2rem;margin-bottom:0.5rem;">🔒</div>
-          <div style="font-family:var(--head);font-size:1rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.4rem;">MODO BASIC ACTIVO</div>
-          <div style="font-size:0.82rem;color:var(--text2);">Las mediciones están fijadas en 1 voltaje trifásico y 1 carga trifásica.<br>Cambie a <strong style="color:var(--accent)">FULL PANEL</strong> para personalizar.</div>
-          <button class="btn btn-primary" style="margin-top:1rem;" onclick="setVersion('full')">Activar Full Panel</button>
+      <div id="mediciones-lock-overlay" style="display:none;position:relative;margin-bottom:0.75rem;">
+        <div style="background:rgba(0,212,255,0.04);border:1px solid rgba(0,212,255,0.2);border-radius:10px;padding:1.25rem;display:flex;align-items:center;gap:1rem;">
+          <span style="font-size:1.8rem;">📋</span>
+          <div style="flex:1;">
+            <div style="font-family:var(--head);font-size:0.9rem;color:var(--accent);letter-spacing:2px;margin-bottom:0.3rem;">MODO TABLA ACTIVO</div>
+            <div style="font-size:0.78rem;color:var(--text2);">Las mediciones las controla la tabla de cargas. Activa los toggles ⚡ y 〰 desde la pestaña <strong style="color:var(--accent);">📋 Cargas</strong> o cambia al modo manual.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:0.4rem;">
+            <button class="btn btn-primary btn-sm" onclick="setTab('cargas')">Ver tabla →</button>
+            <button class="btn btn-outline btn-sm" onclick="setQuoteMode('manual')">Modo manual</button>
+          </div>
         </div>
       </div>
 
@@ -1054,11 +1087,117 @@
       </div>
     </div>
 
+    <!-- ══════════════════════════════════════════════════ -->
+    <!-- TAB: CARGAS DEL PANEL                              -->
+    <!-- ══════════════════════════════════════════════════ -->
+    <div class="tab-panel" id="tab-cargas">
+
+      <!-- Toolbar -->
+      <div class="card" style="margin-bottom:0.75rem;">
+        <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:0.75rem;">
+          <div style="font-family:var(--head);font-size:1rem;font-weight:700;letter-spacing:1.5px;color:var(--accent);text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;">
+            <span>📋</span> Cargas del Panel de Control
+          </div>
+          <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+            <label class="btn btn-outline btn-sm" style="cursor:pointer;" title="Cargar tabla desde archivo JSON">
+              ⬆ Cargar JSON
+              <input type="file" accept=".json" style="display:none" onchange="loadCargasJson(this)">
+            </label>
+            <button class="btn btn-outline btn-sm" onclick="downloadCargasJson()" title="Descargar tabla como JSON">⬇ Descargar JSON</button>
+            <button class="btn btn-primary btn-sm" onclick="addCargaRow()" style="gap:0.4rem;">+ Agregar Fila</button>
+          </div>
+        </div>
+        <div style="font-size:0.75rem;color:var(--text3);margin-top:0.5rem;">
+          Active ✓ en las columnas <strong style="color:#00d4ff;">V</strong> (voltaje) y <strong style="color:#00ff88;">A</strong> (corriente) para incluir esa señal en la cotización. Los totales se actualizan automáticamente.
+        </div>
+      </div>
+
+      <!-- Cargas Table -->
+      <div class="card" style="padding:0;overflow:hidden;">
+        <div style="overflow-x:auto;">
+          <table id="cargas-table" style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+            <thead>
+              <tr style="background:var(--bg2);border-bottom:2px solid var(--border2);">
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;white-space:nowrap;">Ubicación</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;white-space:nowrap;">Código</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;min-width:160px;">Equipo</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1px;color:var(--text3);text-transform:uppercase;">HP</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1px;color:var(--text3);text-transform:uppercase;">KVA</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1px;color:var(--text3);text-transform:uppercase;">Fases</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1px;color:var(--text3);text-transform:uppercase;">Voltaje</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:#00d4ff;text-transform:uppercase;border-left:1px solid var(--border2);" colspan="2">
+                  <span style="color:#00d4ff;">⚡ Medir V</span>
+                </th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:#00ff88;text-transform:uppercase;border-left:1px solid var(--border2);" colspan="4">
+                  <span style="color:#00ff88;">〰 Medir A</span>
+                </th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;border-left:1px solid var(--border2);">
+                  Acciones
+                </th>
+              </tr>
+              <tr style="background:var(--bg3);border-bottom:1px solid var(--border);">
+                <th colspan="7" style="padding:0;border-right:1px solid var(--border2);"></th>
+                <th style="padding:0.4rem 0.4rem;text-align:center;font-size:0.65rem;color:#00d4ff88;border-left:1px solid var(--border2);">F1</th>
+                <th style="padding:0.4rem 0.4rem;text-align:center;font-size:0.65rem;color:#00d4ff88;">F2 F3</th>
+                <th style="padding:0.4rem 0.4rem;text-align:center;font-size:0.65rem;color:#00ff8888;border-left:1px solid var(--border2);">F1</th>
+                <th style="padding:0.4rem 0.4rem;text-align:center;font-size:0.65rem;color:#00ff8888;">F2</th>
+                <th style="padding:0.4rem 0.4rem;text-align:center;font-size:0.65rem;color:#00ff8888;">F3</th>
+                <th style="padding:0.4rem 0.4rem;text-align:center;font-size:0.65rem;color:#00ff8888;">A(A)</th>
+                <th style="padding:0;border-left:1px solid var(--border2);"></th>
+              </tr>
+            </thead>
+            <tbody id="cargas-tbody">
+              <!-- rows injected by JS -->
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Totals footer -->
+        <div id="cargas-totals" style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 1rem;background:var(--bg2);border-top:1px solid var(--border2);align-items:center;">
+          <span style="font-family:var(--head);font-size:0.7rem;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-right:0.25rem;">Totales →</span>
+        </div>
+      </div>
+
+      <!-- Salidas Section -->
+      <div style="margin-top:1rem;" class="card" style="padding:0;overflow:hidden;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;">
+          <div style="font-family:var(--head);font-size:0.95rem;font-weight:700;letter-spacing:1.5px;color:var(--accent3);text-transform:uppercase;display:flex;align-items:center;gap:0.5rem;">
+            <span>↑</span> Salidas Digitales del Panel
+          </div>
+          <button class="btn btn-sm" style="background:rgba(0,255,136,0.1);border:1px solid rgba(0,255,136,0.3);color:var(--accent3);" onclick="addSalidaRow()">+ Agregar Salida</button>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="salidas-table" style="width:100%;border-collapse:collapse;font-size:0.78rem;">
+            <thead>
+              <tr style="background:var(--bg2);border-bottom:2px solid var(--border2);">
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Código</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;min-width:160px;">Descripción / Función</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Tipo</th>
+                <th style="padding:0.6rem 0.75rem;text-align:left;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:var(--text3);text-transform:uppercase;">Equipo destino</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1.5px;color:#00ff88;text-transform:uppercase;border-left:1px solid var(--border2);">Cotizar</th>
+                <th style="padding:0.6rem 0.5rem;text-align:center;font-family:var(--head);font-size:0.7rem;letter-spacing:1px;color:var(--text3);text-transform:uppercase;border-left:1px solid var(--border2);">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="salidas-tbody"></tbody>
+          </table>
+        </div>
+        <div id="salidas-totals" style="padding:0.6rem 1rem;background:var(--bg2);border-top:1px solid var(--border);font-size:0.75rem;color:var(--text2);"></div>
+      </div>
+
+    </div>
+
   </div>
 
   <!-- SIDEBAR SUMMARY -->
   <div class="sidebar">
     <div class="summary-title">📋 Resumen de Cotización</div>
+
+    <!-- Quote mode badge -->
+    <div id="sidebar-mode-badge" style="display:flex;align-items:center;gap:0.5rem;padding:0.4rem 0.7rem;border-radius:6px;margin-bottom:0.75rem;background:rgba(0,212,255,0.08);border:1px solid rgba(0,212,255,0.25);">
+      <span style="font-size:0.85rem;">📋</span>
+      <span id="sidebar-mode-label" style="font-family:var(--head);font-size:0.72rem;font-weight:700;color:var(--accent);letter-spacing:1px;text-transform:uppercase;">Modo: Tabla</span>
+      <button onclick="setQuoteMode(quoteMode==='tabla'?'manual':'tabla')" style="margin-left:auto;background:transparent;border:1px solid var(--border2);color:var(--text3);border-radius:4px;font-size:0.65rem;padding:0.15rem 0.5rem;cursor:pointer;font-family:var(--head);letter-spacing:1px;" title="Cambiar modo">cambiar</button>
+    </div>
 
     <div class="summary-section">
       <div class="summary-section-title">Configuración</div>
@@ -1283,6 +1422,10 @@
         <label>Espacio entre elem. (mm)</label>
         <input type="number" id="dim-gap" value="15" min="0" max="80" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
       </div>
+      <div class="form-group" style="min-width:100px;">
+        <label>Separación entre CTs (mm)</label>
+        <input type="number" id="dim-ct-gap" value="20" min="0" max="80" oninput="renderPanelDiagram()" style="font-family:var(--mono);">
+      </div>
     </div>
 
     <!-- Zoom controls -->
@@ -1311,9 +1454,18 @@
     <div id="panel-dim-summary" style="display:flex;flex-wrap:wrap;gap:0.5rem;padding:0.75rem 1.25rem;background:var(--bg2);border-top:1px solid var(--border);flex-shrink:0;font-size:0.78rem;"></div>
 
     <!-- Footer -->
-    <div style="padding:0.6rem 1.25rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;">
+    <div style="padding:0.6rem 1.25rem;background:var(--bg2);border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;flex-wrap:wrap;gap:0.5rem;">
       <div style="font-size:0.72rem;color:var(--text3);">Las dimensiones son referenciales. Verifique con las hojas de datos de cada componente.</div>
-      <button class="btn btn-outline btn-sm" onclick="closePanelDim()">Cerrar</button>
+      <div style="display:flex;gap:0.6rem;">
+        <button class="btn btn-outline btn-sm" onclick="previewDimPdf()" style="gap:0.4rem;">
+          👁 Vista Previa
+        </button>
+        <button class="btn btn-success btn-sm" onclick="downloadDimPdf(false)" style="gap:0.5rem;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Descargar PDF
+        </button>
+        <button class="btn btn-outline btn-sm" onclick="closePanelDim()">Cerrar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1332,32 +1484,32 @@
       <div class="form-row cols-2">
         <div class="form-group">
           <label>Energy Monitor (precio base)</label>
-          <input type="number" id="cfg-base-price" value="500" min="0" step="0.01" onchange="recalculate()">
+          <input type="number" id="cfg-base-price" value="700" min="0" step="0.01" onchange="recalculate()">
         </div>
         <div class="form-group">
           <label>Módulo Full Panel</label>
-          <input type="number" id="cfg-module-price" value="300" min="0" step="0.01" onchange="recalculate()">
+          <input type="number" id="cfg-module-price" value="80" min="0" step="0.01" onchange="recalculate()">
         </div>
       </div>
       <div class="form-row cols-2">
         <div class="form-group">
           <label>Costo por chip de medición (4 entradas)</label>
-          <input type="number" id="cfg-chip-price" value="25" min="0" step="0.01" onchange="recalculate()">
+          <input type="number" id="cfg-chip-price" value="15" min="0" step="0.01" onchange="recalculate()">
         </div>
         <div class="form-group">
           <label>Precio por salida digital</label>
-          <input type="number" id="cfg-do-price" value="15" min="0" step="0.01" onchange="recalculate()">
+          <input type="number" id="cfg-do-price" value="20" min="0" step="0.01" onchange="recalculate()">
         </div>
       </div>
       <div class="form-row cols-2">
         <div class="form-group">
           <label>Transductor de corriente (3 polos/unidad)</label>
-          <input type="number" id="cfg-ct-price" value="45" min="0" step="0.01" onchange="recalculate()"
+          <input type="number" id="cfg-ct-price" value="60" min="0" step="0.01" onchange="recalculate()"
             title="Cada transductor mide hasta 3 corrientes (3 polos). Se calcula 1 transductor por cada 3 señales de corriente.">
         </div>
         <div class="form-group">
           <label>Transductor de voltaje (1 nivel/unidad)</label>
-          <input type="number" id="cfg-vt-price" value="35" min="0" step="0.01" onchange="recalculate()"
+          <input type="number" id="cfg-vt-price" value="60" min="0" step="0.01" onchange="recalculate()"
             title="Cada nivel de voltaje requiere un transductor independiente (monofásico o trifásico).">
         </div>
       </div>
@@ -1535,6 +1687,8 @@ var state = {
   digitalOutputs: 0
 };
 
+var quoteMode = 'tabla'; // 'tabla' | 'manual'
+
 var cfg = {
   basePrice: 500,
   modulePrice: 300,
@@ -1561,6 +1715,7 @@ document.addEventListener('DOMContentLoaded', function() {
     buildThemePresets();
     updatePdfPreview();
   });
+  cargasInit();
 });
 
 // ═══════════════════════════════════════════════════════════
@@ -1671,7 +1826,7 @@ function toggleDiagramStrip() {
 // TABS
 // ═══════════════════════════════════════════════════════════
 function setTab(tab) {
-  var tabNames = ['general','mediciones','outputs'];
+  var tabNames = ['general','mediciones','outputs','cargas'];
   document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
   document.querySelectorAll('.tab-panel').forEach(function(p){ p.classList.remove('active'); });
   var idx = tabNames.indexOf(tab);
@@ -1838,10 +1993,33 @@ function renderDOList() {
 // CALCULATIONS
 // ═══════════════════════════════════════════════════════════
 function calcVoltInputs() {
+  if (quoteMode === 'tabla') {
+    var v = 0;
+    cargasState.rows.forEach(function(r) {
+      if (r.mV1) v++;
+      if (r.mV23) v += 2;
+    });
+    return v;
+  }
   return state.voltages.reduce(function(s, v){ return s + (v.type === 'tri' ? 3 : 1); }, 0);
 }
 function calcCurrentInputs() {
+  if (quoteMode === 'tabla') {
+    var c = 0;
+    cargasState.rows.forEach(function(r) {
+      if (r.mA1) c++;
+      if (r.mA2) c++;
+      if (r.mA3) c++;
+    });
+    return c;
+  }
   return state.singlePhase + state.threePhase * 3;
+}
+
+// Physical CT units = ceil(total current channels / 3), since each CT has 3 slots
+function calcCtQty() {
+  var ci = calcCurrentInputs();
+  return ci > 0 ? Math.ceil(ci / 3) : 0;
 }
 
 function loadCfg() {
@@ -2579,7 +2757,7 @@ function buildPDFDoc() {
 
   var prows=[['Energy Monitor (unidad base)','1',fmtN(bp2,sym),fmtN(bp2,sym)]];
   if(state.version==='full') prows.push(['M\u00F3dulo Full Panel (expansi\u00F3n)','1',fmtN(mp2,sym),fmtN(mp2,sym)]);
-  if(ch>0)   prows.push(['Chip de medici\u00F3n (4 entradas/chip)',String(ch),fmtN(cfg.chipPrice,sym),fmtN(cc2,sym)]);
+  if(ch>0)   prows.push(['Chip de medici\u00F3n adicionales (4 entradas/chip)',String(ch),fmtN(cfg.chipPrice,sym),fmtN(cc2,sym)]);
   if(vtQty2>0) prows.push(['Transductor de voltaje (1 nivel c/u)',String(vtQty2),fmtN(cfg.vtPrice,sym),fmtN(vtc2,sym)]);
   if(ctQty2>0) prows.push(['Transductor de corriente (3 polos)',String(ctQty2),fmtN(cfg.ctPrice,sym),fmtN(ctc2,sym)]);
   if(state.digitalOutputs>0) prows.push(['Salida digital (rel\u00E9)',String(state.digitalOutputs),fmtN(cfg.doPrice,sym),fmtN(dc2,sym)]);
@@ -2687,10 +2865,11 @@ function renderPanelDiagram() {
   var CTW = gd('dim-ct-w', 24);
   var VTW = gd('dim-vt-w', 45);
   var GAP = gd('dim-gap', 15);
+  var CT_GAP = gd('dim-ct-gap', 20);  // space between adjacent CTs
 
   // Pull current config from state
   var isFull  = state.version === 'full';
-  var ctQty   = calcCurrentInputs() > 0 ? Math.ceil(calcCurrentInputs() / 3) : 0;
+  var ctQty   = calcCtQty();
   var vtQty   = state.voltageCount;
 
   // Transducer height (tall enough for 3 cables)
@@ -2698,8 +2877,9 @@ function renderPanelDiagram() {
   var VTH = DH * 0.65;
 
   // Elements left to right: [VTs...] [gap] [CTs...] [gap] [Device] [gap?] [Module?]
+  var ctInterGap = ctQty > 1 ? (ctQty - 1) * CT_GAP : 0;
   var totalMM = (vtQty * VTW) + (vtQty > 0 ? GAP : 0)
-              + (ctQty * CTW) + (ctQty > 0 ? GAP : 0)
+              + (ctQty * CTW) + ctInterGap + (ctQty > 0 ? GAP : 0)
               + DW
               + (isFull ? GAP + MW : 0);
 
@@ -2713,7 +2893,7 @@ function renderPanelDiagram() {
     _cx += PX(VTW) + (_v < vtQty-1 ? PX(4) : PX(GAP));
   if (vtQty === 0 && ctQty > 0) _cx += 0;
   for (var _ct = 0; _ct < ctQty; _ct++)
-    _cx += PX(CTW) + (_ct < ctQty-1 ? PX(4) : PX(GAP));
+    _cx += PX(CTW) + (_ct < ctQty-1 ? PX(CT_GAP) : PX(GAP));
   if (ctQty === 0 && vtQty === 0) _cx += 0;
   _cx += PX(DW);
   if (isFull) _cx += PX(GAP) + PX(MW);
@@ -2822,7 +3002,7 @@ function renderPanelDiagram() {
     }
 
     // Arrow label for VT width
-    s += dimArrow(vt_x, BASELINE + 12, vt_x + vt_w, BASELINE + 12, C.warn+'cc', false, VTW+'mm');
+    s += dimArrow(vt_x, BASELINE + 12, vt_x + vt_w, C.warn+'cc', VTW+'mm', false);
 
     cx += vt_w + (v < vtQty-1 ? PX(4) : PX(GAP));
   }
@@ -2836,32 +3016,67 @@ function renderPanelDiagram() {
     var ct_y = BASELINE - ct_h;
     ctXs.push({ x: ct_x, w: ct_w, h: ct_h, y: ct_y });
 
-    // Body
-    s += rect(ct_x, ct_y, ct_w, ct_h, C.ct, C.green, 1.5, 3);
-    // Top stripe
-    s += rect(ct_x, ct_y, ct_w, PX(8), C.green+'33', C.green, 0.5, 3);
+    // Body drawn AFTER cables so it covers horizontal stubs passing through — see below
 
-    // Internal dotted lines (core slots) — like the sketch
-    var slotH = (ct_h - PX(12)) / 4;
-    for (var sl = 0; sl < 3; sl++) {
-      var sy = ct_y + PX(12) + slotH * sl + slotH/2;
-      s += line(ct_x+4, sy, ct_x+ct_w-4, sy, C.green+'44', 1, '3 3');
+    // ── U-path cables: enter from top, horizontal through CT (hidden inside body), exit down ──
+    var sp3 = ct_w / 4;
+    var cols3 = [C.cable_a, C.cable_b, C.cable_c];
+    var labels3 = ['L1', 'L2', 'L3'];
+    var cableTopY  = ct_y - 30;      // top entry point (above CT)
+    var cableExitY = BASELINE + 28;  // bottom exit point (below CT)
+
+    // Each phase gets its own horizontal level (staggered)
+    var levels = [ct_y + ct_h*0.25, ct_y + ct_h*0.50, ct_y + ct_h*0.75];
+    var hMargin = PX(14); // horizontal extension beyond CT body on each side
+
+    // Clip ID so vertical segments inside the CT body are hidden
+    var clipId = 'ctclip' + ct;
+    s += '<defs><clipPath id="'+clipId+'_out">'
+       + '<rect x="0" y="0" width="'+SVG_W+'" height="'+SVG_H+'"/>'
+       + '</clipPath></defs>';
+
+    for (var ci = 0; ci < 3; ci++) {
+      var cx_cable = ct_x + sp3*(ci+1);
+      var col3 = cols3[ci];
+      var hY = levels[ci];
+
+      // Vertical drop ABOVE CT (dashed, only down to ct_y)
+      s += '<line x1="'+cx_cable+'" y1="'+cableTopY+'" x2="'+cx_cable+'" y2="'+ct_y+'"'
+         + ' stroke="'+col3+'" stroke-width="2" stroke-dasharray="4 2"/>';
+      // Phase label above
+      s += text(cx_cable, cableTopY - 6, ['A','B','C'][ci], col3, 8);
+
+      // Horizontal through-run stubs — shorter so they don't crowd adjacent components
+      var hMarginShort = PX(6); // short stub just enough to see the line exit the body
+      // Left stub
+      s += '<line x1="'+(ct_x - hMarginShort)+'" y1="'+hY+'" x2="'+ct_x+'" y2="'+hY+'"'
+         + ' stroke="'+col3+'" stroke-width="2.5"/>';
+      // Right stub
+      s += '<line x1="'+(ct_x+ct_w)+'" y1="'+hY+'" x2="'+(ct_x+ct_w+hMarginShort)+'" y2="'+hY+'"'
+         + ' stroke="'+col3+'" stroke-width="2.5"/>';
+      // Label L1/L2/L3 centered ON the left stub, sitting above the line
+      var labelX = ct_x - hMarginShort/2;
+      s += text(labelX, hY - 4, labels3[ci], col3, 7, 'middle', true);
+
+      // Vertical exit BELOW CT (dashed, from BASELINE down)
+      s += '<line x1="'+cx_cable+'" y1="'+BASELINE+'" x2="'+cx_cable+'" y2="'+cableExitY+'"'
+         + ' stroke="'+col3+'" stroke-width="2" stroke-dasharray="4 2"/>';
     }
 
-    // Cable entering top
-    s += cable3(ct_x, ct_y - 30, ct_y, true);
-
-    // Cable exiting bottom
-    s += cable3(ct_x, BASELINE, BASELINE + 28, false);
-
-    // Dimension arrow
-    s += dimArrow(ct_x, BASELINE + 12, ct_x + ct_w, BASELINE + 12, C.green+'cc', false);
-    s += text((ct_x + ct_x + ct_w)/2, BASELINE + 24, CTW+'mm', C.green+'99', 8);
-
-    // Label
+    // Re-draw CT body ON TOP to cover the horizontal lines passing through it
+    s += rect(ct_x, ct_y, ct_w, ct_h, C.ct, C.green, 1.5, 3);
+    s += rect(ct_x, ct_y, ct_w, PX(8), C.green+'33', C.green, 0.5, 3);
+    var slotH2 = (ct_h - PX(12)) / 4;
+    for (var sl2 = 0; sl2 < 3; sl2++) {
+      var sy2 = ct_y + PX(12) + slotH2 * sl2 + slotH2/2;
+      s += line(ct_x+4, sy2, ct_x+ct_w-4, sy2, C.green+'44', 1, '3 3');
+    }
     s += text(ct_x + ct_w/2, ct_y + ct_h/2 + 4, 'CT'+(ct+1), C.green, 9, 'middle', true);
 
-    cx += ct_w + (ct < ctQty-1 ? PX(4) : PX(GAP));
+    // Dimension arrow (body width only — as original)
+    s += dimArrow(ct_x, BASELINE + 12, ct_x + ct_w, C.green+'cc', CTW+'mm', false);
+
+    cx += ct_w + (ct < ctQty-1 ? PX(CT_GAP) : PX(GAP));
   }
 
   if (ctQty === 0 && vtQty > 0) cx += 0; // already added gap
@@ -2893,8 +3108,7 @@ function renderPanelDiagram() {
   s += text(dev_x + dev_w/2, dev_y + dev_h - 10, 'ENERGY MONITOR', C.accent, 9, 'middle', true);
 
   // Dimension arrow
-  s += dimArrow(dev_x, BASELINE + 28, dev_x + dev_w, BASELINE + 28, C.accent, false);
-  s += text(dev_x + dev_w/2, BASELINE + 42, DW+'mm', C.accent+'cc', 9);
+  s += dimArrow(dev_x, BASELINE + 28, dev_x + dev_w, C.accent, DW+'mm', false);
 
   // Height dimension on left side
   s += line(dev_x - 12, dev_y, dev_x - 12, BASELINE, C.accent+'88', 1);
@@ -2941,8 +3155,7 @@ function renderPanelDiagram() {
     s += text(mod_x + mod_w/2, mod_y + mod_h/2 + 10, 'FULL PANEL', C.warn, 10, 'middle', true);
 
     // Dimension arrow
-    s += dimArrow(mod_x, BASELINE + 28, mod_x + mod_w, BASELINE + 28, C.warn, false);
-    s += text(mod_x + mod_w/2, BASELINE + 42, MW+'mm', C.warn+'cc', 9);
+    s += dimArrow(mod_x, BASELINE + 28, mod_x + mod_w, C.warn, MW+'mm', false);
 
     cx += mod_w;
   }
@@ -2980,6 +3193,1047 @@ function renderPanelDiagram() {
 
   // Auto-fit after render
   setTimeout(panelZoomFit, 30);
+}
+
+// ═══════════════════════════════════════════════════════════
+// QUOTE MODE
+// ═══════════════════════════════════════════════════════════
+function setQuoteMode(mode) {
+  quoteMode = mode;
+
+  var isTabla = mode === 'tabla';
+
+  // Cards
+  el('mode-tabla-card').classList.toggle('selected', isTabla);
+  el('mode-manual-card').classList.toggle('selected', !isTabla);
+  el('mode-tabla-card').style.borderColor = isTabla ? 'var(--accent)' : '';
+  el('mode-manual-card').style.borderColor = !isTabla ? 'var(--warn)' : '';
+
+  // Banners
+  el('mode-tabla-banner').style.display  = isTabla  ? 'flex' : 'none';
+  el('mode-manual-banner').style.display = !isTabla ? 'flex' : 'none';
+
+  // Sidebar badge
+  var badge = el('sidebar-mode-badge');
+  var label = el('sidebar-mode-label');
+  if (badge && label) {
+    if (isTabla) {
+      badge.style.background = 'rgba(0,212,255,0.08)';
+      badge.style.border = '1px solid rgba(0,212,255,0.25)';
+      label.style.color = 'var(--accent)';
+      label.textContent = 'Modo: Tabla';
+    } else {
+      badge.style.background = 'rgba(255,159,0,0.08)';
+      badge.style.border = '1px solid rgba(255,159,0,0.25)';
+      label.style.color = 'var(--warn)';
+      label.textContent = 'Modo: Manual';
+    }
+  }
+
+  // Show/hide tabs depending on mode
+  var tabMed  = el('tab-btn-mediciones');
+  var tabOut  = el('tab-btn-outputs');
+  var tabCar  = el('tab-btn-cargas');
+  if (tabMed) tabMed.style.display = isTabla ? 'none' : '';
+  if (tabOut) tabOut.style.display = isTabla ? 'none' : '';
+  if (tabCar) tabCar.style.display = isTabla ? ''     : 'none';
+
+  // If currently on a hidden tab, switch to general
+  var activePanel = document.querySelector('.tab-panel.active');
+  if (activePanel) {
+    var pid = activePanel.id;
+    if (isTabla && (pid === 'tab-mediciones' || pid === 'tab-outputs')) setTab('general');
+    if (!isTabla && pid === 'tab-cargas') setTab('general');
+  }
+
+  // Lock overlay on mediciones tab (in case user forces it somehow)
+  var medLock = el('mediciones-lock-overlay');
+  if (medLock) medLock.style.display = isTabla ? 'block' : 'none';
+
+  // Sync or restore
+  if (isTabla) {
+    syncCargasToQuote();
+  } else {
+    renderVoltageRows();
+    applyBasicLock();
+    updateSidebar();
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
+// CARGAS DEL PANEL — STATE & LOGIC
+// ═══════════════════════════════════════════════════════════
+
+var cargasState = {
+  rows: [],    // { id, ubicacion, codigo, equipo, hp, kva, fases, voltaje, mV1, mV23, mA1, mA2, mA3, amperes }
+  salidas: []  // { id, codigo, desc, tipo, destino, cotizar }
+};
+
+var _cargaIdSeq = 1;
+var _salidaIdSeq = 1;
+
+// ── DEFAULT SAMPLE DATA ─────────────────────────────────
+var CARGAS_DEFAULT = {
+  rows: [
+    { ubicacion:'Pozo de Entrada', codigo:'BPE-01', equipo:'Bomba LSG 203',          hp:2,    kva:1.92,  fases:3, voltaje:208, mV1:false, mV23:false, mA1:true,  mA2:true,  mA3:true,  amperes:10.6 },
+    { ubicacion:'Pozo de Entrada', codigo:'BPE-02', equipo:'Bomba LSG 203',          hp:2,    kva:1.92,  fases:3, voltaje:208, mV1:false, mV23:false, mA1:true,  mA2:true,  mA3:true,  amperes:10.6 },
+    { ubicacion:'Homogenizador',   codigo:'BH-01',  equipo:'Bomba Sumergible LE41',  hp:0.5,  kva:0.49,  fases:1, voltaje:120, mV1:false, mV23:false, mA1:true,  mA2:false, mA3:false, amperes:12   },
+    { ubicacion:'Homogenizador',   codigo:'BH-02',  equipo:'Bomba Sumergible LE41',  hp:0.5,  kva:0.49,  fases:1, voltaje:120, mV1:false, mV23:false, mA1:false, mA2:true,  mA3:false, amperes:12   },
+    { ubicacion:'RBA',             codigo:'S0-01',  equipo:'Soplador Mapner Sem 04', hp:7.5,  kva:7.23,  fases:3, voltaje:208, mV1:true,  mV23:true,  mA1:true,  mA2:true,  mA3:true,  amperes:24.2 },
+    { ubicacion:'RBA',             codigo:'VS-01',  equipo:'Ventilador Soplador 1',  hp:0.12, kva:0.116, fases:3, voltaje:208, mV1:false, mV23:false, mA1:true,  mA2:true,  mA3:true,  amperes:0.7  }
+  ],
+  salidas: [
+    { codigo:'DO-01', desc:'Arranque bomba BPE-01', tipo:'Relé NA', destino:'BPE-01', cotizar:true },
+    { codigo:'DO-02', desc:'Arranque bomba BPE-02', tipo:'Relé NA', destino:'BPE-02', cotizar:true }
+  ]
+};
+
+function cargasInit() {
+  // Assign ids
+  cargasState.rows = CARGAS_DEFAULT.rows.map(function(r){
+    return Object.assign({ id: _cargaIdSeq++ }, r);
+  });
+  cargasState.salidas = CARGAS_DEFAULT.salidas.map(function(r){
+    return Object.assign({ id: _salidaIdSeq++ }, r);
+  });
+  renderCargasTable();
+  renderSalidasTable();
+  // Apply default mode after a tick so all DOM elements are ready
+  setTimeout(function(){ setQuoteMode('tabla'); }, 0);
+}
+
+// ── RENDER CARGAS TABLE ─────────────────────────────────
+function renderCargasTable() {
+  var tbody = el('cargas-tbody');
+  if (!tbody) return;
+
+  // Group by ubicacion for merged cells effect
+  var rows = cargasState.rows;
+  var html = '';
+  var prevUbic = null;
+
+  rows.forEach(function(r, idx) {
+    // Count how many share same ubicacion
+    var ubicCount = rows.filter(function(x){ return x.ubicacion === r.ubicacion; }).length;
+    var isFirstInGroup = r.ubicacion !== prevUbic;
+    prevUbic = r.ubicacion;
+
+    var rowBg = idx % 2 === 0 ? 'background:var(--panel);' : 'background:var(--bg3);';
+    var groupBorder = isFirstInGroup && idx > 0 ? 'border-top:1px solid var(--border2);' : '';
+
+    html += '<tr style="'+rowBg+groupBorder+'" id="cr-'+r.id+'">';
+
+    // Ubicacion (show only on first of group — visual grouping)
+    if (isFirstInGroup) {
+      html += '<td rowspan="'+ubicCount+'" style="padding:0.55rem 0.75rem;vertical-align:middle;font-weight:600;color:var(--text2);font-family:var(--head);font-size:0.75rem;letter-spacing:0.5px;border-right:1px solid var(--border);border-top:1px solid var(--border2);background:var(--bg2);white-space:nowrap;">'
+        + '<input type="text" value="'+escHtml(r.ubicacion)+'" onchange="updateCarga('+r.id+',\'ubicacion\',this.value)" style="background:transparent;border:none;color:var(--text2);font-family:var(--head);font-size:0.75rem;font-weight:600;width:100%;outline:none;min-width:90px;">'
+        + '</td>';
+    }
+
+    html += '<td style="padding:0.45rem 0.6rem;white-space:nowrap;">'
+      + '<input type="text" value="'+escHtml(r.codigo)+'" onchange="updateCarga('+r.id+',\'codigo\',this.value)" style="'+inStyle('accent')+' min-width:65px;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.6rem;">'
+      + '<input type="text" value="'+escHtml(r.equipo)+'" onchange="updateCarga('+r.id+',\'equipo\',this.value)" style="'+inStyle()+' min-width:140px;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + '<input type="number" value="'+r.hp+'" onchange="updateCarga('+r.id+',\'hp\',+this.value)" style="'+inStyle()+' width:52px;text-align:center;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + '<input type="number" step="0.001" value="'+r.kva+'" onchange="updateCarga('+r.id+',\'kva\',+this.value)" style="'+inStyle()+' width:60px;text-align:center;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + '<select onchange="updateCarga('+r.id+',\'fases\',+this.value)" style="'+inStyle()+' width:52px;text-align:center;">'
+      + '<option value="1"'+(r.fases===1?' selected':'')+'>1</option>'
+      + '<option value="2"'+(r.fases===2?' selected':'')+'>2</option>'
+      + '<option value="3"'+(r.fases===3?' selected':'')+'>3</option>'
+      + '</select></td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + '<input type="number" value="'+r.voltaje+'" onchange="updateCarga('+r.id+',\'voltaje\',+this.value)" style="'+inStyle()+' width:60px;text-align:center;">'
+      + '</td>';
+
+    // mV1 toggle (border-left)
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;border-left:1px solid var(--border2);">'
+      + toggleBtn(r.id, 'mV1', r.mV1, '#00d4ff') + '</td>';
+    // mV23 toggle (F2+F3 combined for 3-phase)
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + (r.fases >= 3 ? toggleBtn(r.id, 'mV23', r.mV23, '#00d4ff') : '<span style="color:var(--text3);font-size:0.7rem;">—</span>')
+      + '</td>';
+
+    // Current toggles
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;border-left:1px solid var(--border2);">'
+      + toggleBtn(r.id, 'mA1', r.mA1, '#00ff88') + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + (r.fases >= 2 ? toggleBtn(r.id, 'mA2', r.mA2, '#00ff88') : '<span style="color:var(--text3);font-size:0.7rem;">—</span>')
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + (r.fases >= 3 ? toggleBtn(r.id, 'mA3', r.mA3, '#00ff88') : '<span style="color:var(--text3);font-size:0.7rem;">—</span>')
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;">'
+      + '<input type="number" step="0.1" value="'+(r.amperes||'')+'" onchange="updateCarga('+r.id+',\'amperes\',+this.value)" placeholder="A" style="'+inStyle()+' width:56px;text-align:center;">'
+      + '</td>';
+
+    // Actions
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;border-left:1px solid var(--border2);white-space:nowrap;">'
+      + '<button onclick="deleteCargaRow('+r.id+')" class="btn btn-danger" style="padding:0.2rem 0.5rem;font-size:0.7rem;">✕</button>'
+      + '</td>';
+
+    html += '</tr>';
+  });
+
+  tbody.innerHTML = html;
+  renderCargasTotals();
+}
+
+function toggleBtn(id, field, active, col) {
+  var bg  = active ? col+'22' : 'transparent';
+  var bc  = active ? col      : 'var(--border2)';
+  var tc  = active ? col      : 'var(--text3)';
+  var lbl = active ? '✓' : '○';
+  var handler = field === 'cotizar_salida'
+    ? 'toggleSalida('+id+')'
+    : 'toggleCarga('+id+',\''+field+'\')';
+  return '<button onclick="'+handler+'" style="'
+    + 'background:'+bg+';border:1px solid '+bc+';color:'+tc+';'
+    + 'border-radius:4px;padding:0.15rem 0.55rem;cursor:pointer;font-size:0.8rem;'
+    + 'font-weight:700;min-width:28px;transition:all 0.15s;">'+lbl+'</button>';
+}
+
+function inStyle(accent) {
+  var col = accent === 'accent' ? 'var(--accent)' : 'var(--text)';
+  return 'background:var(--bg3);border:1px solid var(--border);border-radius:4px;'
+    + 'color:'+col+';font-family:var(--mono);font-size:0.78rem;padding:0.25rem 0.4rem;width:100%;outline:none;';
+}
+
+function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+function toggleCarga(id, field) {
+  var r = cargasState.rows.find(function(x){ return x.id === id; });
+  if (!r) return;
+  r[field] = !r[field];
+  // If toggling mV23 on, also ensure mV1 is on (they share same VT)
+  if (field === 'mV23' && r.mV23) r.mV1 = true;
+  renderCargasTable();
+  syncCargasToQuote();
+}
+
+function updateCarga(id, field, val) {
+  var r = cargasState.rows.find(function(x){ return x.id === id; });
+  if (!r) return;
+  r[field] = val;
+  // Re-render only totals (avoid losing focus mid-edit)
+  renderCargasTotals();
+  syncCargasToQuote();
+}
+
+function addCargaRow() {
+  cargasState.rows.push({
+    id: _cargaIdSeq++,
+    ubicacion:'Nueva Ubicación', codigo:'EQ-'+(cargasState.rows.length+1).toString().padStart(2,'0'),
+    equipo:'Nuevo Equipo', hp:0, kva:0, fases:3, voltaje:208,
+    mV1:false, mV23:false, mA1:false, mA2:false, mA3:false, amperes:0
+  });
+  renderCargasTable();
+}
+
+function deleteCargaRow(id) {
+  cargasState.rows = cargasState.rows.filter(function(x){ return x.id !== id; });
+  renderCargasTable();
+  syncCargasToQuote();
+}
+
+// ── TOTALS FOOTER ──────────────────────────────────────
+function renderCargasTotals() {
+  var totDiv = el('cargas-totals');
+  if (!totDiv) return;
+  var vInputs = 0, ct1 = 0, ct2 = 0, ct3 = 0;
+  var vtLevels = {};
+  cargasState.rows.forEach(function(r) {
+    if (r.mV1) vInputs++;
+    if (r.mV23) vInputs += 2;
+    if (r.mV1 || r.mV23) vtLevels[r.voltaje + '_' + r.fases] = 1;
+    if (r.mA1) ct1++;
+    if (r.mA2) ct2++;
+    if (r.mA3) ct3++;
+  });
+  var totalActiveA = ct1 + ct2 + ct3;
+  var totalCTs = totalActiveA > 0 ? Math.ceil(totalActiveA / 3) : 0;
+  var vtPhysical = Object.keys(vtLevels).length;
+
+  function chip(label, val, col) {
+    return '<div style="display:inline-flex;align-items:center;gap:0.35rem;background:'+col+'11;border:1px solid '+col+'44;border-radius:5px;padding:0.2rem 0.6rem;">'
+      + '<span style="font-size:0.65rem;color:'+col+'99;font-family:var(--head);letter-spacing:1px;text-transform:uppercase;">'+label+'</span>'
+      + '<span style="font-size:0.82rem;color:'+col+';font-family:var(--mono);font-weight:700;">'+val+'</span>'
+      + '</div>';
+  }
+
+  var html = '<span style="font-family:var(--head);font-size:0.7rem;color:var(--text3);letter-spacing:1px;text-transform:uppercase;margin-right:0.25rem;">Totales →</span>';
+
+  html += chip('Canales A', totalActiveA + '/'+totalCTs*3, '#00ff88');
+  html += chip('CTs', totalCTs, '#00ff88');
+  html += chip('Canales V', vInputs, '#00d4ff');
+  html += chip('VTs', vtPhysical, '#00d4ff');
+  html += chip('Entradas 4-20mA', totalActiveA + vInputs, '#ff9f00');
+  totDiv.innerHTML = html;
+}
+
+// ── SYNC TO QUOTATION ──────────────────────────────────
+function syncCargasToQuote() {
+  if (quoteMode !== 'tabla') return; // manual mode: don't override
+
+  // Collect unique voltage levels being monitored
+  var voltageLevels = {};
+  var ct1 = 0, ct2 = 0, ct3 = 0;
+  cargasState.rows.forEach(function(r) {
+    if (r.mV1 || r.mV23) {
+      var key = r.voltaje + '_' + r.fases;
+      if (!voltageLevels[key]) voltageLevels[key] = { value: r.voltaje, type: r.fases >= 3 ? 'tri' : 'mono' };
+    }
+    if (r.mA1) ct1++;
+    if (r.mA2) ct2++;
+    if (r.mA3) ct3++;
+  });
+
+  var vtList = Object.values(voltageLevels);
+  var doCount = cargasState.salidas.filter(function(s){ return s.cotizar; }).length;
+
+  // Tabla mode always forces Full Panel (it drives the config)
+  if (state.version !== 'full') {
+    state.version = 'full';
+    el('ver-basic').classList.remove('selected');
+    el('ver-full').classList.add('selected');
+    el('basic-locked-banner').style.display = 'none';
+    el('dim-module-group') && (el('dim-module-group').style.display = '');
+  }
+
+  state.voltageCount = Math.max(1, vtList.length);
+  state.voltages = vtList.length > 0 ? vtList : [{ value: '', type: 'tri' }];
+
+  // Derive current inputs: count actual active toggles (not loads)
+  // Each active toggle = 1 current channel. Each CT has 3 channels.
+  var totalActiveA = ct1 + ct2 + ct3;
+  // Map to state so calcCurrentInputs() returns the correct total
+  state.singlePhase = totalActiveA;
+  state.threePhase = 0;
+  state.digitalOutputs = doCount;
+
+  renderVoltageRows();
+  applyBasicLock();
+  updateSidebar();
+
+  showJsonBanner('↺ Cotizacion actualizada desde tabla de cargas', true);
+}
+
+// ── SALIDAS TABLE ──────────────────────────────────────
+function renderSalidasTable() {
+  var tbody = el('salidas-tbody');
+  if (!tbody) return;
+  var html = '';
+  cargasState.salidas.forEach(function(r, idx) {
+    var rowBg = idx % 2 === 0 ? 'background:var(--panel);' : 'background:var(--bg3);';
+    html += '<tr style="'+rowBg+'" id="sr-'+r.id+'">';
+    html += '<td style="padding:0.45rem 0.6rem;">'
+      + '<input type="text" value="'+escHtml(r.codigo)+'" onchange="updateSalida('+r.id+',\'codigo\',this.value)" style="'+inStyle('accent')+' min-width:65px;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.6rem;">'
+      + '<input type="text" value="'+escHtml(r.desc)+'" onchange="updateSalida('+r.id+',\'desc\',this.value)" style="'+inStyle()+' min-width:150px;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.6rem;">'
+      + '<select onchange="updateSalida('+r.id+',\'tipo\',this.value)" style="'+inStyle()+' min-width:90px;">'
+      + ['Relé NA','Relé NC','Relé NA/NC','Transistor','Triac','Otro'].map(function(t){
+          return '<option'+(r.tipo===t?' selected':'')+'>'+t+'</option>';
+        }).join('')
+      + '</select></td>';
+    html += '<td style="padding:0.45rem 0.6rem;">'
+      + '<input type="text" value="'+escHtml(r.destino)+'" onchange="updateSalida('+r.id+',\'destino\',this.value)" style="'+inStyle()+' min-width:100px;">'
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;border-left:1px solid var(--border2);">'
+      + toggleBtn(r.id, 'cotizar_salida', r.cotizar, '#00ff88')
+      + '</td>';
+    html += '<td style="padding:0.45rem 0.4rem;text-align:center;border-left:1px solid var(--border2);">'
+      + '<button onclick="deleteSalidaRow('+r.id+')" class="btn btn-danger" style="padding:0.2rem 0.5rem;font-size:0.7rem;">✕</button>'
+      + '</td>';
+    html += '</tr>';
+  });
+  tbody.innerHTML = html;
+  renderSalidasTotals();
+}
+
+function updateSalida(id, field, val) {
+  var r = cargasState.salidas.find(function(x){ return x.id === id; });
+  if (!r) return;
+  r[field] = val;
+  renderSalidasTotals();
+  syncCargasToQuote();
+}
+
+function toggleSalida(id) {
+  var r = cargasState.salidas.find(function(x){ return x.id === id; });
+  if (!r) return;
+  r.cotizar = !r.cotizar;
+  renderSalidasTable();
+  syncCargasToQuote();
+}
+
+function addSalidaRow() {
+  cargasState.salidas.push({
+    id: _salidaIdSeq++,
+    codigo: 'DO-'+(cargasState.salidas.length+1).toString().padStart(2,'0'),
+    desc:'Nueva salida', tipo:'Relé NA', destino:'', cotizar:true
+  });
+  renderSalidasTable();
+  syncCargasToQuote();
+}
+
+function deleteSalidaRow(id) {
+  cargasState.salidas = cargasState.salidas.filter(function(x){ return x.id !== id; });
+  renderSalidasTable();
+  syncCargasToQuote();
+}
+
+function renderSalidasTotals() {
+  var div = el('salidas-totals');
+  if (!div) return;
+  var cotizar = cargasState.salidas.filter(function(s){ return s.cotizar; }).length;
+  var total   = cargasState.salidas.length;
+  div.innerHTML = '<span style="font-family:var(--head);font-size:0.7rem;color:var(--text3);letter-spacing:1px;">TOTALES → </span>'
+    + '<span style="color:var(--accent3);font-family:var(--mono);font-weight:700;">'+cotizar+'</span>'
+    + '<span style="color:var(--text3);font-size:0.7rem;"> salidas a cotizar de '+total+' registradas</span>';
+}
+
+// ── JSON IMPORT / EXPORT ──────────────────────────────
+function loadCargasJson(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      var data = JSON.parse(e.target.result);
+      if (data.rows) {
+        cargasState.rows = data.rows.map(function(r){ return Object.assign({ id: _cargaIdSeq++ }, r); });
+      }
+      if (data.salidas) {
+        cargasState.salidas = data.salidas.map(function(r){ return Object.assign({ id: _salidaIdSeq++ }, r); });
+      }
+      renderCargasTable();
+      renderSalidasTable();
+      syncCargasToQuote();
+      showJsonBanner('✓ Tabla de cargas cargada correctamente', true);
+    } catch(err) {
+      showJsonBanner('✗ Error al leer el JSON: ' + err.message, false);
+    }
+    input.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function downloadCargasJson() {
+  var data = {
+    rows:    cargasState.rows.map(function(r){ var c = Object.assign({},r); delete c.id; return c; }),
+    salidas: cargasState.salidas.map(function(r){ var c = Object.assign({},r); delete c.id; return c; })
+  };
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type:'application/json' });
+  var url  = URL.createObjectURL(blob);
+  var a    = document.createElement('a');
+  a.href = url; a.download = 'cargas_panel.json'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// ─── DOWNLOAD DIMENSIONS PDF ────────────────────────────────
+function previewDimPdf() { downloadDimPdf(true); }
+
+function downloadDimPdf(previewOnly) {
+  var svgWrap = el('panel-dim-svg-wrap');
+  if (!svgWrap) return;
+  var svgEl = svgWrap.querySelector('svg');
+  if (!svgEl) { alert('Genere el diagrama primero.'); return; }
+
+  var svgW = parseFloat(svgEl.getAttribute('width')  || 800);
+  var svgH = parseFloat(svgEl.getAttribute('height') || 300);
+
+  // Gather dimension info
+  var DW  = parseFloat((el('dim-device-w') || {value:'115'}).value) || 115;
+  var DH  = parseFloat((el('dim-device-h') || {value:'130'}).value) || 130;
+  var MW  = parseFloat((el('dim-module-w') || {value:'150'}).value) || 150;
+  var CTW = parseFloat((el('dim-ct-w')    || {value:'24'}).value)  || 24;
+  var VTW = parseFloat((el('dim-vt-w')    || {value:'45'}).value)  || 45;
+  var GAP = parseFloat((el('dim-gap')     || {value:'15'}).value)  || 15;
+  var CT_GAP_PDF = parseFloat((el('dim-ct-gap') || {value:'20'}).value) || 20;
+  var isFull = state.version === 'full';
+  var ctQty  = calcCtQty();
+  var vtQty  = isFull ? state.voltageCount : 1;
+  var ctInterGapPdf = ctQty > 1 ? (ctQty - 1) * CT_GAP_PDF : 0;
+  var totalMM = (vtQty * VTW) + (vtQty > 0 ? GAP : 0)
+              + (ctQty * CTW) + ctInterGapPdf + (ctQty > 0 ? GAP : 0)
+              + DW
+              + (isFull ? GAP + MW : 0);
+
+  var { jsPDF } = window.jspdf;
+  var pdf = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+  var PW = 297, PH = 210; // A4 landscape
+
+  // ── PALETTE ──
+  var C = {
+    bg:      [10, 14, 20],
+    bg2:     [15, 21, 32],
+    panel:   [17, 24, 38],
+    accent:  [0, 212, 255],
+    warn:    [255, 159, 0],
+    green:   [0, 255, 136],
+    text:    [216, 232, 245],
+    text2:   [122, 154, 181],
+    text3:   [74, 106, 133],
+    border:  [30, 45, 69],
+    border2: [37, 54, 80],
+    white:   [255, 255, 255]
+  };
+
+  function setFill(col)   { pdf.setFillColor(col[0], col[1], col[2]); }
+  function setDraw(col)   { pdf.setDrawColor(col[0], col[1], col[2]); }
+  function setTxt(col)    { pdf.setTextColor(col[0], col[1], col[2]); }
+  function setFont(sz, style) { pdf.setFontSize(sz); pdf.setFont('helvetica', style || 'normal'); }
+
+  // ── BACKGROUND ──
+  setFill(C.bg);
+  pdf.rect(0, 0, PW, PH, 'F');
+
+  // grid lines
+  pdf.setLineWidth(0.08);
+  setDraw([0, 212, 255]);
+  pdf.setGState(new pdf.GState({ opacity: 0.04 }));
+  for (var gx = 0; gx < PW; gx += 10) { pdf.line(gx, 0, gx, PH); }
+  for (var gy = 0; gy < PH; gy += 10) { pdf.line(0, gy, PW, gy); }
+  pdf.setGState(new pdf.GState({ opacity: 1 }));
+
+  // ── HEADER BAND ──
+  setFill(C.bg2);
+  pdf.rect(0, 0, PW, 22, 'F');
+  // accent top strip
+  setFill(C.accent);
+  pdf.rect(0, 0, PW, 1.2, 'F');
+  // border bottom
+  setFill(C.border2);
+  pdf.rect(0, 22, PW, 0.3, 'F');
+
+  // Lightning bolt icon (drawn as filled shape, no emoji)
+  var bx = 5, by = 3, bw = 16, bh = 16;
+  setFill([13, 31, 53]);
+  pdf.roundedRect(bx, by, bw, bh, 2, 2, 'F');
+  setDraw(C.accent);
+  pdf.setLineWidth(0.5);
+  pdf.roundedRect(bx, by, bw, bh, 2, 2, 'S');
+  // Draw bolt using lines() — relative vectors from start point
+  setFill(C.accent);
+  setDraw(C.accent);
+  pdf.setLineWidth(0.3);
+  // Bolt polygon: start top-right tip, go clockwise
+  // Absolute points:
+  var bp = [
+    [bx+9.5, by+3.5],  // top tip
+    [bx+5.5, by+9.5],  // mid-left
+    [bx+8.2, by+9.5],  // mid-left inner
+    [bx+6.5, by+12.5], // bottom tip
+    [bx+11,  by+7],    // mid-right
+    [bx+8.3, by+7]     // mid-right inner
+  ];
+  // Convert to relative vectors for pdf.lines
+  var bvecs = [];
+  for (var bi = 1; bi < bp.length; bi++)
+    bvecs.push([bp[bi][0]-bp[bi-1][0], bp[bi][1]-bp[bi-1][1]]);
+  pdf.lines(bvecs, bp[0][0], bp[0][1], [1,1], 'FD', true);
+
+  // Title
+  setTxt(C.accent);
+  setFont(13, 'bold');
+  pdf.text('ENERGY MONITOR', 25, 10);
+  setTxt(C.text3);
+  setFont(6.5, 'normal');
+  pdf.text('SISTEMA DE COTIZACION  ·  DIMENSIONES REQUERIDAS EN PANEL', 25, 15.5);
+
+  // Right side info
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('es-CR', { day:'2-digit', month:'long', year:'numeric' });
+  setTxt(C.text3);
+  setFont(6.5);
+  pdf.text('Generado: ' + dateStr, PW - 6, 10, { align: 'right' });
+  setTxt(C.text2);
+  pdf.text('Documento tecnico para disenadores · Uso interno', PW - 6, 15.5, { align: 'right' });
+
+  // ── SECTION TITLE — solid pill background for legibility ──
+  var sY = 27;
+  var titleStr = 'DIAGRAMA DE DISPOSICION FISICA';
+  setFont(6, 'bold');
+  var titleW = pdf.getTextWidth(titleStr) + 6;
+  setFill(C.accent);
+  pdf.roundedRect(8, sY, titleW, 6, 1, 1, 'F');
+  setTxt(C.bg);
+  pdf.text(titleStr, 11, sY + 4.2);
+  setFill(C.border);
+  pdf.rect(8 + titleW + 2, sY + 3, PW - 16 - titleW - 2, 0.3, 'F');
+
+  // ── SVG → CANVAS → PDF image ──
+  var svgClone = svgEl.cloneNode(true);
+  // Ensure dark background in canvas
+  svgClone.setAttribute('style', 'background:#0a0e14;');
+
+  var xmlStr = new XMLSerializer().serializeToString(svgClone);
+  var blob   = new Blob([xmlStr], { type: 'image/svg+xml;charset=utf-8' });
+  var url    = URL.createObjectURL(blob);
+
+  var img = new Image();
+  img.onload = function() {
+    var canvas = document.createElement('canvas');
+    var SCALE  = 2.5;
+    canvas.width  = svgW * SCALE;
+    canvas.height = svgH * SCALE;
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#0a0e14';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    URL.revokeObjectURL(url);
+
+    var imgData = canvas.toDataURL('image/png');
+
+    // Fit SVG into available area
+    var areaX = 8, areaY = sY + 8;
+    var areaW = PW - 16, areaH = 118;
+    var ratio = Math.min(areaW / svgW, areaH / svgH);
+    var rW = svgW * ratio, rH = svgH * ratio;
+    var rX = areaX + (areaW - rW) / 2;
+
+    // Frame around diagram
+    setFill(C.bg2);
+    pdf.roundedRect(areaX, areaY - 1, areaW, areaH + 2, 3, 3, 'F');
+    setDraw(C.border2);
+    pdf.setLineWidth(0.4);
+    pdf.roundedRect(areaX, areaY - 1, areaW, areaH + 2, 3, 3, 'S');
+
+    pdf.addImage(imgData, 'PNG', rX, areaY, rW, rH);
+
+    // ── DIMENSIONS TABLE ──
+    var tY = sY + 8 + areaH + 6;
+
+    // Table header
+    var resStr = 'RESUMEN DE DIMENSIONES';
+    setFont(5.5, 'bold');
+    var resW = pdf.getTextWidth(resStr) + 6;
+    setFill(C.bg2);
+    pdf.rect(8, tY, PW - 16, 5.5, 'F');
+    setFill(C.border2);
+    pdf.roundedRect(8, tY, resW, 5.5, 1, 1, 'F');
+    setTxt(C.accent);
+    pdf.text(resStr, 11, tY + 3.8);
+    setFill(C.border);
+    pdf.rect(8 + resW + 2, tY + 2.7, PW - 16 - resW - 2, 0.3, 'F');
+
+    tY += 7;
+
+    // Build dimension rows
+    var rows = [
+      { label: 'Dispositivo Principal (Energy Monitor)', val: DW + ' × ' + DH + ' mm', sub: 'Ancho × Alto', col: C.accent },
+    ];
+    if (isFull) rows.push({ label: 'Modulo Full Panel (expansion)', val: MW + ' × ' + DH + ' mm', sub: 'Ancho × Alto', col: C.warn });
+    if (ctQty > 0) rows.push({ label: 'Transductores de Corriente (CT) — ' + ctQty + ' unidad(es)', val: ctQty + ' × ' + CTW + ' mm', sub: 'Cantidad × Ancho', col: C.green });
+    if (vtQty > 0) rows.push({ label: 'Transductores de Voltaje (VT) — ' + vtQty + ' unidad(es)', val: vtQty + ' × ' + VTW + ' mm', sub: 'Cantidad × Ancho', col: C.warn });
+    rows.push({ label: 'Separacion entre elementos', val: GAP + ' mm', sub: 'Por elemento', col: C.text2 });
+    if (ctQty > 1) rows.push({ label: 'Separacion entre CTs', val: CT_GAP_PDF + ' mm', sub: (ctQty-1) + ' espacio(s)', col: C.green });
+    rows.push({ label: 'ANCHO TOTAL REQUERIDO EN PANEL', val: totalMM.toFixed(0) + ' mm', sub: 'Suma total horizontal', col: C.accent, bold: true });
+
+    var colW = (PW - 16) / rows.length;
+    rows.forEach(function(row, i) {
+      var rx = 8 + i * colW;
+      // Cell bg
+      var alpha = i % 2 === 0 ? C.panel : C.bg2;
+      setFill(alpha);
+      pdf.roundedRect(rx + 0.5, tY, colW - 1, 24, 2, 2, 'F');
+      // Color accent stripe top
+      setFill(row.col);
+      pdf.roundedRect(rx + 0.5, tY, colW - 1, 1.2, 1, 1, 'F');
+      // Border
+      setDraw(C.border);
+      pdf.setLineWidth(0.3);
+      pdf.roundedRect(rx + 0.5, tY, colW - 1, 24, 2, 2, 'S');
+      // Label
+      setTxt(C.text2);
+      setFont(5, row.bold ? 'bold' : 'normal');
+      var lines = pdf.splitTextToSize(row.label, colW - 4);
+      pdf.text(lines, rx + colW / 2, tY + 5.5, { align: 'center' });
+      // Value
+      setTxt(row.col);
+      setFont(row.bold ? 9 : 8, 'bold');
+      pdf.text(row.val, rx + colW / 2, tY + 15, { align: 'center' });
+      // Sub label
+      setTxt(C.text3);
+      setFont(4.5, 'normal');
+      pdf.text(row.sub, rx + colW / 2, tY + 20, { align: 'center' });
+    });
+
+    // ── FOOTER PAGE 1 ──
+    setFill(C.bg2);
+    pdf.rect(0, PH - 10, PW, 10, 'F');
+    setFill(C.border);
+    pdf.rect(0, PH - 10, PW, 0.3, 'F');
+    setTxt(C.text3);
+    setFont(5.5);
+    pdf.text('Las dimensiones son referenciales. Verifique con las hojas de datos de cada componente antes de fabricar el panel.', 8, PH - 5.5);
+    var hasPage2 = quoteMode === 'tabla' && cargasState.rows.length > 0;
+    pdf.text('Energy Monitor – Sistema de Cotizacion v2.0' + (hasPage2 ? '  ·  Pag. 1' : ''), PW - 8, PH - 5.5, { align: 'right' });
+
+    // ════════════════════════════════════════════════════
+    // PAGE 2 — TABLA DE CARGAS (solo en modo tabla)
+    // ════════════════════════════════════════════════════
+    if (quoteMode === 'tabla' && cargasState.rows.length > 0) {
+    pdf.addPage();
+
+    // Page 2 background
+    setFill(C.bg);
+    pdf.rect(0, 0, PW, PH, 'F');
+
+    // Header band (same as page 1)
+    setFill(C.bg2);
+    pdf.rect(0, 0, PW, 22, 'F');
+    setFill(C.accent);
+    pdf.rect(0, 0, PW, 1.2, 'F');
+    setFill(C.border2);
+    pdf.rect(0, 22, PW, 0.3, 'F');
+    setTxt(C.accent);
+    setFont(13, 'bold');
+    pdf.text('ENERGY MONITOR', 8, 10);
+    setTxt(C.text3);
+    setFont(6.5, 'normal');
+    pdf.text('TABLA DE CARGAS DEL PANEL  ·  MEDICIONES Y SALIDAS', 8, 15.5);
+    setTxt(C.text3);
+    setFont(6.5);
+    pdf.text('Pag. 2  ·  ' + dateStr, PW - 6, 10, { align: 'right' });
+
+    // ── CARGAS TABLE ──
+    var p2Y = 28;
+
+    // Section label
+    var cTitleStr = 'CARGAS DEL PANEL DE CONTROL';
+    setFont(6, 'bold');
+    var cTitleW = pdf.getTextWidth(cTitleStr) + 6;
+    setFill(C.accent);
+    pdf.roundedRect(8, p2Y, cTitleW, 6, 1, 1, 'F');
+    setTxt(C.bg);
+    pdf.text(cTitleStr, 11, p2Y + 4.2);
+    setFill(C.border);
+    pdf.rect(8 + cTitleW + 2, p2Y + 3, PW - 16 - cTitleW - 2, 0.3, 'F');
+
+    p2Y += 9;
+
+    // Column definitions for cargas table
+    var cols = [
+      { label: 'Ubicacion',  w: 32, align: 'left'   },
+      { label: 'Codigo',     w: 20, align: 'left'   },
+      { label: 'Equipo',     w: 50, align: 'left'   },
+      { label: 'HP',         w: 12, align: 'center' },
+      { label: 'KVA',        w: 14, align: 'center' },
+      { label: 'Fases',      w: 11, align: 'center' },
+      { label: 'Voltaje',    w: 14, align: 'center' },
+      { label: 'V F1',       w: 10, align: 'center' },
+      { label: 'V F2-3',     w: 10, align: 'center' },
+      { label: 'A F1',       w: 10, align: 'center' },
+      { label: 'A F2',       w: 10, align: 'center' },
+      { label: 'A F3',       w: 10, align: 'center' },
+      { label: 'A (A)',      w: 14, align: 'center' }
+    ];
+    var tableW = cols.reduce(function(s,c){ return s+c.w; }, 0);
+    var tableX = 8;
+
+    // Header row
+    setFill(C.bg2);
+    pdf.rect(tableX, p2Y, tableW, 6.5, 'F');
+    setFill(C.border2);
+    pdf.rect(tableX, p2Y + 6.5, tableW, 0.3, 'F');
+    var hx = tableX;
+    cols.forEach(function(c) {
+      setTxt(c.label.startsWith('V') ? C.accent : c.label.startsWith('A') ? C.green : C.text3);
+      setFont(5, 'bold');
+      pdf.text(c.label, hx + c.w/2, p2Y + 4.3, { align: 'center' });
+      hx += c.w;
+    });
+
+    // Vertical separators in header
+    setFill(C.border);
+    var sepX = tableX + cols[0].w + cols[1].w + cols[2].w + cols[3].w + cols[4].w + cols[5].w + cols[6].w;
+    pdf.rect(sepX, p2Y, 0.3, 6.5, 'F');  // before V cols
+    pdf.rect(sepX + cols[7].w + cols[8].w, p2Y, 0.3, 6.5, 'F'); // before A cols
+
+    p2Y += 7;
+
+    // Legend row — centered below header
+    setFill(C.bg);
+    pdf.rect(tableX, p2Y, tableW, 5, 'F');
+    setFill(C.border);
+    pdf.rect(tableX, p2Y + 5, tableW, 0.2, 'F');
+    // Center all 3 legend items
+    var legCx = tableX + tableW / 2;
+    // Item 1: medir voltaje
+    setFill(C.accent);
+    pdf.circle(legCx - 55, p2Y + 2.5, 1.5, 'F');
+    setTxt(C.accent);
+    setFont(4, 'bold');
+    pdf.text('= Medir voltaje', legCx - 52, p2Y + 3.5);
+    // Item 2: medir corriente
+    setFill(C.green);
+    pdf.circle(legCx - 12, p2Y + 2.5, 1.5, 'F');
+    setTxt(C.green);
+    pdf.text('= Medir corriente', legCx - 9, p2Y + 3.5);
+    // Item 3: no medir
+    setDraw(C.text3);
+    pdf.setLineWidth(0.35);
+    pdf.circle(legCx + 33, p2Y + 2.5, 1.3, 'S');
+    setTxt(C.text3);
+    setFont(4, 'normal');
+    pdf.text('= No medir', legCx + 36, p2Y + 3.5);
+
+    p2Y += 6;
+
+    var rowH = 6;
+    var prevUbicPdf = null;
+
+    cargasState.rows.forEach(function(r, i) {
+      // Alternating row bg
+      setFill(i % 2 === 0 ? C.panel : C.bg2);
+      pdf.rect(tableX, p2Y, tableW, rowH, 'F');
+
+      // Vertical separators for V/A toggle columns
+      setFill(C.border);
+      pdf.rect(sepX, p2Y, 0.2, rowH, 'F');
+      pdf.rect(sepX + cols[7].w + cols[8].w, p2Y, 0.2, rowH, 'F');
+
+      // Group border
+      if (r.ubicacion !== prevUbicPdf && i > 0) {
+        setFill(C.border2);
+        pdf.rect(tableX, p2Y, tableW, 0.3, 'F');
+      }
+      prevUbicPdf = r.ubicacion;
+
+      var cx2 = tableX;
+      var vals = [
+        r.ubicacion, r.codigo, r.equipo,
+        String(r.hp), String(r.kva), String(r.fases), String(r.voltaje),
+        r.mV1  ? '✓' : '-', r.mV23 ? '✓' : '-',
+        r.mA1  ? '✓' : '-', r.mA2  ? '✓' : '-', r.mA3 ? '✓' : '-',
+        r.amperes ? String(r.amperes) : '-'
+      ];
+
+      cols.forEach(function(c, ci) {
+        var val = vals[ci] || '';
+        var isCheck = val === '✓';
+        var isDash  = val === '-';
+
+        // For toggle columns (V/A), draw a colored dot instead of text
+        if (ci >= 7 && ci <= 11) {
+          var dotX = cx2 + c.w/2;
+          var dotY = p2Y + rowH/2;
+          var dotCol = ci <= 8 ? C.accent : C.green;
+          if (isCheck) {
+            // Filled colored dot
+            setFill(dotCol);
+            pdf.circle(dotX, dotY, 1.8, 'F');
+            // Small "SI" label under dot
+            setTxt(dotCol);
+            setFont(3.5, 'bold');
+          } else {
+            // Empty circle outline
+            setDraw(C.text3);
+            pdf.setLineWidth(0.3);
+            pdf.circle(dotX, dotY, 1.2, 'S');
+          }
+        } else {
+          // Normal text columns
+          if (ci === 1) setTxt(C.accent);         // codigo
+          else if (ci === 6) setTxt(C.warn);       // voltaje
+          else setTxt(isDash ? C.text3 : C.text);
+          setFont(5, ci === 1 ? 'bold' : 'normal');
+          var txt = pdf.splitTextToSize(val, c.w - 2);
+          pdf.text(txt[0] || '', cx2 + (c.align === 'center' ? c.w/2 : 2), p2Y + 4, { align: c.align === 'center' ? 'center' : 'left' });
+        }
+        cx2 += c.w;
+      });
+
+      p2Y += rowH;
+    });
+
+    // Table bottom border
+    setFill(C.border2);
+    pdf.rect(tableX, p2Y, tableW, 0.4, 'F');
+    p2Y += 4;
+
+    // Totals row
+    var ct1tot = cargasState.rows.filter(function(r){return r.mA1;}).length;
+    var ct2tot = cargasState.rows.filter(function(r){return r.mA2;}).length;
+    var ct3tot = cargasState.rows.filter(function(r){return r.mA3;}).length;
+    var vtTot  = (function(){var s={};cargasState.rows.forEach(function(r){if(r.mV1||r.mV23)s[r.voltaje+'_'+r.fases]=1;});return Object.keys(s).length;})();
+    var totEntA = ct1tot + ct2tot + ct3tot;
+    var ctUnits = totEntA > 0 ? Math.ceil(totEntA / 3) : 0;
+    var vtTotSignals = (function() {
+      var vts = {}; // Objeto para guardar el máximo de señales requeridas por cada VT
+      cargasState.rows.forEach(function(r) {
+        if (r.mV1 || r.mV23) {
+          // Usamos voltaje y fases como identificador único del VT (bus)
+          var key = r.voltaje + '_' + r.fases; 
+      
+          // Inicializamos el VT en el objeto si no existe
+          if (!vts[key]) {
+            vts[key] = 0;
+          }
+      
+          // Si alguna carga conectada a este VT requiere F2 y F3, el VT usará 3 señales
+          if (r.mV23) {
+            vts[key] = 3;
+          } 
+          // Si solo requiere F1, y el VT no estaba ya configurado para 3, usará 1 señal
+          else if (r.mV1 && vts[key] < 3) {
+            vts[key] = 1;
+          }
+        }
+      });
+  
+      // Sumamos las señales reales a utilizar de todos los VTs requeridos
+      var total = 0;
+      for (var k in vts) {
+        total += vts[k];
+      }
+  
+      return total;
+    })();
+
+    p2Y += 1;
+    setFill(C.bg2);
+    pdf.roundedRect(tableX, p2Y, tableW, 14, 2, 2, 'F');
+    setDraw(C.border2);
+    pdf.setLineWidth(0.3);
+    pdf.roundedRect(tableX, p2Y, tableW, 14, 2, 2, 'S');
+
+    setTxt(C.text3);
+    setFont(5, 'bold');
+    pdf.text('RESUMEN DE MEDICIONES', tableX + 3, p2Y + 4);
+
+    // Chips — show channel packing info
+    var chipData = [
+      { label: 'Canales A',     val: totEntA + '/' + ctUnits*3, col: C.green },
+      { label: 'CTs requer.',   val: String(ctUnits),           col: C.green },
+      { label: 'VTs requer.',   val: String(vtTot),             col: C.accent },
+      { label: 'Entradas 4-20', val: String(totEntA + vtTotSignals),   col: C.warn }
+    ];
+    var chipW = 35, chipH = 10, chipGap = 4;
+    var chipStartX = tableX + 48;
+    chipData.forEach(function(cd, ci) {
+      var cx3 = chipStartX + ci * (chipW + chipGap);
+      // Border
+      setDraw(cd.col);
+      pdf.setLineWidth(0.4);
+      pdf.roundedRect(cx3, p2Y + 2, chipW, chipH, 1.5, 1.5, 'S');
+      // Subtle fill
+      setFill(cd.col);
+      pdf.setGState(new pdf.GState({ opacity: 0.08 }));
+      pdf.roundedRect(cx3, p2Y + 2, chipW, chipH, 1.5, 1.5, 'F');
+      pdf.setGState(new pdf.GState({ opacity: 1 }));
+      // Label
+      setTxt(cd.col);
+      setFont(4, 'normal');
+      pdf.text(cd.label, cx3 + chipW/2, p2Y + 5.5, { align: 'center' });
+      // Value
+      setFont(7, 'bold');
+      pdf.text(String(cd.val), cx3 + chipW/2, p2Y + 10.5, { align: 'center' });
+    });
+
+    p2Y += 14;
+
+    // ── SALIDAS TABLE ──
+    if (cargasState.salidas.length > 0) {
+      var sTitleStr = 'SALIDAS DIGITALES';
+      setFont(6, 'bold');
+      var sTitleW = pdf.getTextWidth(sTitleStr) + 6;
+      setFill(C.green);
+      pdf.roundedRect(tableX, p2Y, sTitleW, 6, 1, 1, 'F');
+      setTxt(C.bg);
+      pdf.text(sTitleStr, tableX + 3, p2Y + 4.2);
+      setFill(C.border);
+      pdf.rect(tableX + sTitleW + 2, p2Y + 3, tableW - sTitleW - 2, 0.3, 'F');
+      p2Y += 9;
+
+      // Salidas header
+      var sCols = [
+        { label: 'Codigo', w: 22, align: 'left' },
+        { label: 'Descripcion / Funcion', w: 70, align: 'left' },
+        { label: 'Tipo', w: 30, align: 'left' },
+        { label: 'Destino', w: 40, align: 'left' },
+        { label: 'Cotizar', w: 16, align: 'center' }
+      ];
+      var sTableW = sCols.reduce(function(s,c){ return s+c.w; }, 0);
+      setFill(C.bg2);
+      pdf.rect(tableX, p2Y, sTableW, 6.5, 'F');
+      var shx = tableX;
+      sCols.forEach(function(c) {
+        setTxt(C.text3);
+        setFont(5, 'bold');
+        pdf.text(c.label, shx + (c.align==='center'?c.w/2:2), p2Y + 4.3, { align: c.align==='center'?'center':'left' });
+        shx += c.w;
+      });
+      p2Y += 7;
+
+      cargasState.salidas.forEach(function(r, i) {
+        setFill(i % 2 === 0 ? C.panel : C.bg2);
+        pdf.rect(tableX, p2Y, sTableW, rowH, 'F');
+        var scx = tableX;
+        var sVals = [r.codigo, r.desc, r.tipo, r.destino, r.cotizar ? 'on' : 'off'];
+        sCols.forEach(function(c, ci) {
+          var val = sVals[ci] || '';
+          if (ci === 4) {
+            // Cotizar toggle - draw dot
+            var dx = scx + c.w/2, dy = p2Y + rowH/2;
+            if (r.cotizar) {
+              setFill(C.green);
+              pdf.circle(dx, dy, 1.8, 'F');
+            } else {
+              setDraw(C.text3);
+              pdf.setLineWidth(0.3);
+              pdf.circle(dx, dy, 1.2, 'S');
+            }
+          } else {
+            if (ci === 0) setTxt(C.accent);
+            else setTxt(C.text);
+            setFont(5, ci === 0 ? 'bold' : 'normal');
+            pdf.text(val, scx + (c.align==='center'?c.w/2:2), p2Y + 4, { align: c.align==='center'?'center':'left' });
+          }
+          scx += c.w;
+        });
+        p2Y += rowH;
+      });
+
+      setFill(C.border2);
+      pdf.rect(tableX, p2Y, sTableW, 0.4, 'F');
+    }
+
+    // ── FOOTER PAGE 2 ──
+    setFill(C.bg2);
+    pdf.rect(0, PH - 10, PW, 10, 'F');
+    setFill(C.border);
+    pdf.rect(0, PH - 10, PW, 0.3, 'F');
+    setTxt(C.text3);
+    setFont(5.5);
+    pdf.text('Los datos de la tabla son referencias del proyecto. Verifique con el listado de cargas aprobado.', 8, PH - 5.5);
+    pdf.text('Energy Monitor – Sistema de Cotizacion v2.0  ·  Pag. 2', PW - 8, PH - 5.5, { align: 'right' });
+
+    } // end if quoteMode === 'tabla'
+
+    // Save or Preview
+    if (previewOnly) {
+      var blobUrl = pdf.output('bloburl');
+      window.open(blobUrl, '_blank');
+    } else {
+      pdf.save('Dimensiones_EnergyMonitor.pdf');
+    }
+  };
+  img.onerror = function() {
+    URL.revokeObjectURL(url);
+    alert('No se pudo renderizar el diagrama. Asegúrese de que esté visible.');
+  };
+  img.src = url;
 }
 
 // ─── ZOOM HELPERS ───────────────────────────────────────────
