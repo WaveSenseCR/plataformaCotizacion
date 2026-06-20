@@ -1248,6 +1248,17 @@
 
     <hr class="divider">
 
+    <!-- Puerta de enlace (gateway) opcional -->
+    <div id="gateway-toggle-card" onclick="toggleGateway()" style="cursor:pointer;display:flex;align-items:center;gap:0.6rem;padding:0.7rem 0.85rem;border:2px solid var(--border);border-radius:8px;background:var(--bg3);margin-bottom:0.75rem;transition:all 0.2s;">
+      <div id="gateway-switch" style="flex-shrink:0;width:38px;height:22px;border-radius:11px;background:var(--border2);position:relative;transition:all 0.2s;">
+        <div id="gateway-knob" style="position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:var(--text3);transition:all 0.2s;"></div>
+      </div>
+      <div style="flex:1;line-height:1.25;">
+        <div style="font-family:var(--head);font-size:0.82rem;font-weight:700;letter-spacing:0.5px;color:var(--text);">📡 Puerta de enlace</div>
+        <div style="font-size:0.7rem;color:var(--text2);">Incluir en la cotización · <span id="gateway-toggle-price">$110.00</span></div>
+      </div>
+    </div>
+
     <div class="total-box">
       <div class="total-row">
         <span class="total-label">Energy Monitor (base)</span>
@@ -1273,6 +1284,10 @@
         <span class="total-label">Salidas digitales</span>
         <span class="total-value" id="sum-do-cost">$0.00</span>
       </div>
+      <div class="total-row" id="gateway-row" style="display:none">
+        <span class="total-label">Puerta de enlace</span>
+        <span class="total-value" id="sum-gateway-cost">$0.00</span>
+      </div>
       <div class="total-row">
         <span class="total-label">Config. plataforma (<span id="sum-svc-pct">2.5</span>%)</span>
         <span class="total-value" id="sum-svc-cost">$0.00</span>
@@ -1291,6 +1306,10 @@
         <span style="font-family:var(--head); font-size:0.85rem; letter-spacing:1px; color:var(--text);">TOTAL</span>
         <span class="total-final" id="sum-total">$0.00</span>
       </div>
+    </div>
+
+    <div id="gateway-note" style="display:none;margin-top:0.6rem;padding:0.6rem 0.75rem;background:rgba(255,159,0,0.06);border:1px solid rgba(255,159,0,0.25);border-radius:8px;font-size:0.7rem;color:var(--warn);line-height:1.4;">
+      ⚠ La cotización <strong>no considera</strong> la tarjeta SIM ni el servicio de telefonía para la puerta de enlace.
     </div>
 
     <div style="margin-top:1rem;">
@@ -1526,6 +1545,13 @@
       </div>
       <div class="form-row cols-2">
         <div class="form-group">
+          <label>Puerta de enlace (gateway)</label>
+          <input type="number" id="cfg-gateway-price" value="110" min="0" step="0.01" onchange="recalculate()"
+            title="Costo de la puerta de enlace. Se incluye solo si se activa el interruptor en el panel de cotización. No incluye tarjeta SIM ni servicio de telefonía.">
+        </div>
+      </div>
+      <div class="form-row cols-2">
+        <div class="form-group">
           <label>Moneda</label>
           <select id="cfg-currency" onchange="recalculate()">
             <option value="$">USD ($)</option>
@@ -1684,7 +1710,8 @@ var state = {
   voltages: [{ value: '', type: 'tri' }],
   singlePhase: 0,
   threePhase: 0,
-  digitalOutputs: 0
+  digitalOutputs: 0,
+  includeGateway: false
 };
 
 var quoteMode = 'tabla'; // 'tabla' | 'manual'
@@ -1698,7 +1725,8 @@ var cfg = {
   vtPrice: 35,
   serviceRate: 2.5,
   iva: 13,
-  currency: '$'
+  currency: '$',
+  gatewayPrice: 110
 };
 
 var logoCompanyData = null;
@@ -1752,6 +1780,7 @@ function applyJsonConfig(d) {
     setVal('cfg-vt-price',     d.prices.vtPrice);
     setVal('cfg-iva',          d.prices.iva);
     setVal('cfg-currency',     d.prices.currency);
+    setVal('cfg-gateway-price', d.prices.gatewayPrice);
   }
   if (d.company) {
     setTxt('cfg-my-company', d.company.name);
@@ -2034,6 +2063,7 @@ function loadCfg() {
   cfg.serviceRate = gv('cfg-service-rate', 2.5);
   cfg.iva         = gv('cfg-iva',           13);
   cfg.currency    = gs('cfg-currency',     '$');
+  cfg.gatewayPrice = gv('cfg-gateway-price', 110);
 }
 
 function updateSidebar() {
@@ -2055,7 +2085,8 @@ function updateSidebar() {
   var ctc = ctQty * cfg.ctPrice;
   var vtc = vtQty * cfg.vtPrice;
   var dc  = state.digitalOutputs * cfg.doPrice;
-  var sub = bp + mp + cc + ctc + vtc + dc;
+  var gw  = state.includeGateway ? cfg.gatewayPrice : 0;
+  var sub = bp + mp + cc + ctc + vtc + dc + gw;
   var svc = sub * (cfg.serviceRate / 100);
   var iva = (sub + svc) * (cfg.iva / 100);
   var tot = sub + svc + iva;
@@ -2078,6 +2109,29 @@ function updateSidebar() {
   st('sum-ct-cost', fmt(ctc));
   st('sum-vt-cost', fmt(vtc));
   st('sum-do-cost', fmt(dc));
+  st('sum-gateway-cost', fmt(gw));
+  st('gateway-toggle-price', fmt(cfg.gatewayPrice));
+  // Show/hide gateway row, note and switch state
+  var gwRow = el('gateway-row'); if (gwRow) gwRow.style.display = state.includeGateway ? '' : 'none';
+  var gwNote = el('gateway-note'); if (gwNote) gwNote.style.display = state.includeGateway ? '' : 'none';
+  var gwCard = el('gateway-toggle-card');
+  var gwSwitch = el('gateway-switch');
+  var gwKnob = el('gateway-knob');
+  if (gwCard && gwSwitch && gwKnob) {
+    if (state.includeGateway) {
+      gwCard.style.borderColor = 'var(--accent)';
+      gwCard.style.background = 'rgba(0,212,255,0.06)';
+      gwSwitch.style.background = 'var(--accent)';
+      gwKnob.style.left = '18px';
+      gwKnob.style.background = '#0a0e14';
+    } else {
+      gwCard.style.borderColor = 'var(--border)';
+      gwCard.style.background = 'var(--bg3)';
+      gwSwitch.style.background = 'var(--border2)';
+      gwKnob.style.left = '2px';
+      gwKnob.style.background = 'var(--text3)';
+    }
+  }
   st('sum-svc-cost', fmt(svc));
   st('sum-svc-pct', cfg.serviceRate);
   st('sum-subtotal', fmt(sub));
@@ -2091,6 +2145,13 @@ function updateSidebar() {
 
 // alias so old onchange="" calls still work
 function recalculate() { updateSidebar(); }
+
+// Toggle inclusion of the gateway (puerta de enlace) in the quotation
+function toggleGateway() {
+  state.includeGateway = !state.includeGateway;
+  updateSidebar();
+  if (typeof updatePdfPreview === 'function') updatePdfPreview();
+}
 
 function renderChipIcons(active, total) {
   var c = el('chip-icons');
@@ -2752,7 +2813,8 @@ function buildPDFDoc() {
   var cc2=ch*cfg.chipPrice;
   var ctc2=ctQty2*cfg.ctPrice, vtc2=vtQty2*cfg.vtPrice;
   var dc2=state.digitalOutputs*cfg.doPrice;
-  var sub=bp2+mp2+cc2+ctc2+vtc2+dc2;
+  var gw2=state.includeGateway?cfg.gatewayPrice:0;
+  var sub=bp2+mp2+cc2+ctc2+vtc2+dc2+gw2;
   var svc2=sub*(cfg.serviceRate/100);
   var iva2=(sub+svc2)*(cfg.iva/100), tot=sub+svc2+iva2;
 
@@ -2762,6 +2824,7 @@ function buildPDFDoc() {
   if(vtQty2>0) prows.push(['Transductor de voltaje (1 nivel c/u)',String(vtQty2),fmtN(cfg.vtPrice,sym),fmtN(vtc2,sym)]);
   if(ctQty2>0) prows.push(['Transductor de corriente (3 polos)',String(ctQty2),fmtN(cfg.ctPrice,sym),fmtN(ctc2,sym)]);
   if(state.digitalOutputs>0) prows.push(['Salida digital (rel\u00E9)',String(state.digitalOutputs),fmtN(cfg.doPrice,sym),fmtN(dc2,sym)]);
+  if(state.includeGateway) prows.push(['Puerta de enlace (gateway)','1',fmtN(cfg.gatewayPrice,sym),fmtN(gw2,sym)]);
 
   // Table header
   y = pageCheck(y, 7);
@@ -2824,15 +2887,20 @@ function buildPDFDoc() {
   y += totBoxH + 4;
 
   // Notes
-  y = pageCheck(y, 26);
-  fc(ROW1); doc.roundedRect(M,y,CW,22,2,2,'F');
-  dc(BRD); doc.roundedRect(M,y,CW,22,2,2,'S');
+  var notesH = state.includeGateway ? 27 : 22;
+  y = pageCheck(y, notesH + 4);
+  fc(ROW1); doc.roundedRect(M,y,CW,notesH,2,2,'F');
+  dc(BRD); doc.roundedRect(M,y,CW,notesH,2,2,'S');
   tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.text('NOTAS Y CONDICIONES',M+4,y+6);
   tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
   doc.text('\u2022 Esta cotizaci\u00F3n tiene validez de 30 d\u00EDas naturales a partir de la fecha de emisi\u00F3n.',M+4,y+11.5);
   doc.text('\u2022 Los precios no incluyen instalaci\u00F3n ni puesta en marcha, salvo indicaci\u00F3n contraria.',M+4,y+16);
   var cn=sym==='$'?'d\u00F3lares americanos (USD)':sym==='\u20A1'?'colones costarricenses (CRC)':'euros (EUR)';
   doc.text('\u2022 Todos los precios est\u00E1n expresados en '+cn+'.',M+4,y+20.5);
+  if(state.includeGateway){
+    tc(WARN); doc.setFont('helvetica','bold');
+    doc.text('\u2022 La cotizaci\u00F3n no considera la tarjeta SIM ni el servicio de telefon\u00EDa para la puerta de enlace.',M+4,y+25);
+  }
 
   // Footer on last page
   drawFooter();
