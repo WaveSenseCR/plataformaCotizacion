@@ -520,6 +520,72 @@
     margin-bottom: 1rem;
   }
 
+  /* ── EDITOR DE CONDICIONES ── */
+  .cond-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    padding: 0.5rem;
+    margin-bottom: 0.4rem;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+  }
+  .cond-num {
+    flex: 0 0 20px;
+    height: 20px;
+    line-height: 20px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 0.7rem;
+    color: var(--accent);
+    background: rgba(0,212,255,0.08);
+    border-radius: 4px;
+    margin-top: 2px;
+  }
+  .cond-text {
+    flex: 1;
+    min-width: 0;
+    resize: vertical;
+    font-family: var(--body);
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: var(--text);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 0.4rem 0.5rem;
+  }
+  .cond-text:focus {
+    outline: none;
+    border-color: var(--accent);
+  }
+  .cond-actions {
+    flex: 0 0 auto;
+    display: grid;
+    grid-template-columns: repeat(2, 26px);
+    gap: 3px;
+  }
+  .cond-btn {
+    height: 22px;
+    font-size: 0.62rem;
+    font-weight: 600;
+    font-family: var(--mono);
+    color: var(--text2);
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .cond-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .cond-btn.on {
+    color: var(--bg);
+    background: var(--accent);
+    border-color: var(--accent);
+  }
+  .cond-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
   .summary-section-title {
     font-size: 0.7rem;
     font-weight: 600;
@@ -1534,6 +1600,11 @@
       </div>
       <div class="form-row cols-2">
         <div class="form-group">
+          <label>Anticipo para fabricación (%)</label>
+          <input type="number" id="cfg-advance-pct" value="60" min="0" max="100" step="1" onchange="recalculate()"
+                 title="Porcentaje que debe pagarse para iniciar la fabricación. Se inserta en la condición mediante {anticipo}.">
+        </div>
+        <div class="form-group">
           <label>IVA (%)</label>
           <input type="number" id="cfg-iva" value="13" min="0" max="100" step="0.1" onchange="recalculate()">
         </div>
@@ -1616,6 +1687,27 @@
           <img id="logo-product-preview" src="" style="display:none">
           <div class="logo-placeholder" id="logo-product-ph">📤 Click para subir imagen del producto</div>
         </div>
+      </div>
+    </div>
+
+    <!-- Condiciones de la cotización -->
+    <div class="settings-group">
+      <div class="settings-group-title">📋 Notas y Condiciones</div>
+      <div style="font-size:0.72rem;color:var(--text3);margin-bottom:0.7rem;line-height:1.5;">
+        Estas líneas se imprimen al final del PDF. Use
+        <code style="color:var(--accent);font-family:var(--mono);">{anticipo}</code>,
+        <code style="color:var(--accent);font-family:var(--mono);">{saldo}</code>,
+        <code style="color:var(--accent);font-family:var(--mono);">{moneda}</code> o
+        <code style="color:var(--accent);font-family:var(--mono);">{iva}</code> para insertar valores automáticos.
+        <b style="color:var(--text2);">B</b> = resaltar &nbsp;·&nbsp;
+        <b style="color:var(--text2);">GW</b> = mostrar solo si se incluye la puerta de enlace.
+      </div>
+
+      <div id="cond-list"></div>
+
+      <div style="display:flex;gap:0.5rem;margin-top:0.7rem;">
+        <button class="btn btn-outline btn-sm" onclick="condAdd()">+ Agregar condición</button>
+        <button class="btn btn-outline btn-sm" onclick="condReset()" title="Volver a las condiciones predeterminadas">↺ Restaurar</button>
       </div>
     </div>
 
@@ -1711,7 +1803,8 @@ var state = {
   singlePhase: 0,
   threePhase: 0,
   digitalOutputs: 0,
-  includeGateway: false
+  includeGateway: false,
+  versionManual: false
 };
 
 var quoteMode = 'tabla'; // 'tabla' | 'manual'
@@ -1726,8 +1819,27 @@ var cfg = {
   serviceRate: 2.5,
   iva: 13,
   currency: '$',
-  gatewayPrice: 110
+  gatewayPrice: 110,
+  advancePct: 60
 };
+
+// ═══════════════════════════════════════════════════════════
+// CONDICIONES DE LA COTIZACIÓN (editables)
+// Placeholders soportados: {anticipo} {saldo} {moneda} {iva} {total}
+//   bold: true      → se imprime resaltada en color de advertencia
+//   onlyGateway:true → solo aparece si se incluye la puerta de enlace
+// ═══════════════════════════════════════════════════════════
+var DEFAULT_CONDITIONS = [
+  { text: 'Se debe cancelar un {anticipo}% del monto total para iniciar la fabricación del dispositivo; el {saldo}% restante se cancela contra entrega.', bold: true, onlyGateway: false },
+  { text: 'Esta cotización tiene validez de 30 días naturales a partir de la fecha de emisión.', bold: false, onlyGateway: false },
+  { text: 'Los precios no incluyen instalación ni puesta en marcha, salvo indicación contraria.', bold: false, onlyGateway: false },
+  { text: 'Todos los precios están expresados en {moneda}.', bold: false, onlyGateway: false },
+  { text: 'La cotización no considera la tarjeta SIM ni el servicio de telefonía para la puerta de enlace.', bold: true, onlyGateway: true }
+];
+
+var quoteConditions = DEFAULT_CONDITIONS.map(function(c) {
+  return { text: c.text, bold: c.bold, onlyGateway: c.onlyGateway };
+});
 
 var logoCompanyData = null;
 var logoProductData = null;
@@ -1741,6 +1853,7 @@ document.addEventListener('DOMContentLoaded', function() {
     applyBasicLock();
     updateSidebar();
     buildThemePresets();
+    renderConditions();
     updatePdfPreview();
   });
   cargasInit();
@@ -1781,6 +1894,17 @@ function applyJsonConfig(d) {
     setVal('cfg-iva',          d.prices.iva);
     setVal('cfg-currency',     d.prices.currency);
     setVal('cfg-gateway-price', d.prices.gatewayPrice);
+    setVal('cfg-advance-pct',   d.prices.advancePct);
+  }
+  if (Array.isArray(d.conditions)) {
+    quoteConditions = d.conditions.map(function(c) {
+      return {
+        text: String(c.text || ''),
+        bold: !!c.bold,
+        onlyGateway: !!c.onlyGateway
+      };
+    });
+    renderConditions();
   }
   if (d.company) {
     setTxt('cfg-my-company', d.company.name);
@@ -1882,14 +2006,78 @@ function setProduct(id) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════════
+// CAPACIDAD DEL MODO BASIC
+// BASIC = 1 nivel de voltaje trifásico (3 entradas)
+//       + 1 carga trifásica (3 entradas) = 6 entradas fijas
+// Si la tabla de cargas exige más que esto, se requiere FULL PANEL.
+// ═══════════════════════════════════════════════════════════
+var BASIC_CAPS = {
+  voltLevels:  1,   // niveles de voltaje distintos (1 VT)
+  voltInputs:  3,   // canales de tensión
+  currInputs:  3,   // canales de corriente (1 CT)
+  totalInputs: 6    // entradas totales del equipo base
+};
+
+// Mide lo que realmente pide la tabla de cargas
+function tablaRequirements() {
+  var levels = {}, v = 0, a = 0;
+  cargasState.rows.forEach(function(r) {
+    if (r.mV1)  v += 1;
+    if (r.mV23) v += 2;
+    if (r.mV1 || r.mV23) levels[r.voltaje + '_' + r.fases] = 1;
+    if (r.mA1) a++;
+    if (r.mA2) a++;
+    if (r.mA3) a++;
+  });
+  return {
+    voltLevels: Object.keys(levels).length,
+    voltInputs: v,
+    currInputs: a,
+    total: v + a
+  };
+}
+
+// Devuelve null si BASIC alcanza, o el motivo por el que se requiere FULL PANEL
+function basicShortfall() {
+  var q = tablaRequirements();
+  if (q.voltLevels > BASIC_CAPS.voltLevels)
+    return q.voltLevels + ' niveles de voltaje (BASIC admite ' + BASIC_CAPS.voltLevels + ')';
+  if (q.voltInputs > BASIC_CAPS.voltInputs)
+    return q.voltInputs + ' canales de tensión (BASIC admite ' + BASIC_CAPS.voltInputs + ')';
+  if (q.currInputs > BASIC_CAPS.currInputs)
+    return q.currInputs + ' canales de corriente (BASIC admite ' + BASIC_CAPS.currInputs + ')';
+  if (q.total > BASIC_CAPS.totalInputs)
+    return q.total + ' entradas totales (BASIC admite ' + BASIC_CAPS.totalInputs + ')';
+  return null;
+}
+
+function tablaNeedsFull() { return basicShortfall() !== null; }
+
+// Aplica la versión en la UI sin tocar la marca de selección manual
+function applyVersionUI(v) {
+  state.version = v;
+  el('ver-basic').classList.toggle('selected', v === 'basic');
+  el('ver-full').classList.toggle('selected',  v === 'full');
+  el('sum-version').textContent = v === 'basic' ? 'BASIC' : 'FULL PANEL';
+  var fmr = el('full-module-row'); if (fmr) fmr.style.display = v === 'full' ? 'flex' : 'none';
+  var dmg = el('dim-module-group'); if (dmg) dmg.style.display = v === 'full' ? '' : 'none';
+}
+
 // VERSION + BASIC LOCK
 // ═══════════════════════════════════════════════════════════
 function setVersion(v) {
-  state.version = v;
-  el('ver-basic').classList.toggle('selected', v === 'basic');
-  el('ver-full').classList.toggle('selected', v === 'full');
-  el('sum-version').textContent = v === 'basic' ? 'BASIC' : 'FULL PANEL';
-  el('full-module-row').style.display = v === 'full' ? 'flex' : 'none';
+  // En modo tabla no se puede bajar a BASIC si las cargas exigen más
+  if (v === 'basic' && quoteMode === 'tabla') {
+    var lack = basicShortfall();
+    if (lack) {
+      showJsonBanner('✗ No se puede usar BASIC: la tabla requiere ' + lack, false);
+      return;
+    }
+  }
+  // El usuario eligió a mano → respetar su elección en las próximas sincronizaciones
+  state.versionManual = true;
+  applyVersionUI(v);
   applyBasicLock();
   updateSidebar();
 }
@@ -2051,6 +2239,90 @@ function calcCtQty() {
   return ci > 0 ? Math.ceil(ci / 3) : 0;
 }
 
+// ═══════════════════════════════════════════════════════════
+// CONDICIONES — gestión y renderizado
+// ═══════════════════════════════════════════════════════════
+function currencyName(sym) {
+  return sym === '$' ? 'dólares americanos (USD)'
+       : sym === '₡' ? 'colones costarricenses (CRC)'
+       : sym === '€' ? 'euros (EUR)'
+       : sym;
+}
+
+// Sustituye placeholders y devuelve solo las condiciones aplicables
+function resolveConditions() {
+  var pct = Math.max(0, Math.min(100, cfg.advancePct || 0));
+  var out = [];
+  quoteConditions.forEach(function(c) {
+    if (c.onlyGateway && !state.includeGateway) return;
+    var t = String(c.text || '').trim();
+    if (!t) return;
+    t = t.replace(/\{anticipo\}/g, String(pct))
+         .replace(/\{saldo\}/g,    String(100 - pct))
+         .replace(/\{moneda\}/g,   currencyName(cfg.currency))
+         .replace(/\{iva\}/g,      String(cfg.iva));
+    out.push({ text: t, bold: !!c.bold });
+  });
+  return out;
+}
+
+function renderConditions() {
+  var wrap = el('cond-list');
+  if (!wrap) return;
+  if (!quoteConditions.length) {
+    wrap.innerHTML = '<div style="padding:0.8rem;text-align:center;color:var(--text3);font-size:0.8rem;">Sin condiciones. Agregue una con el botón inferior.</div>';
+    return;
+  }
+  var html = '';
+  quoteConditions.forEach(function(c, i) {
+    html += '<div class="cond-row">'
+      + '<div class="cond-num">' + (i + 1) + '</div>'
+      + '<textarea class="cond-text" rows="2" oninput="condSetText(' + i + ', this.value)" '
+      + 'placeholder="Escriba la condición...">' + escHtml(c.text) + '</textarea>'
+      + '<div class="cond-actions">'
+      +   '<button class="cond-btn' + (c.bold ? ' on' : '') + '" onclick="condToggleBold(' + i + ')" title="Resaltar en el PDF">B</button>'
+      +   '<button class="cond-btn' + (c.onlyGateway ? ' on' : '') + '" onclick="condToggleGw(' + i + ')" title="Mostrar solo si se incluye la puerta de enlace">GW</button>'
+      +   '<button class="cond-btn" onclick="condMove(' + i + ',-1)" title="Subir">▲</button>'
+      +   '<button class="cond-btn" onclick="condMove(' + i + ',1)" title="Bajar">▼</button>'
+      +   '<button class="cond-btn danger" onclick="condRemove(' + i + ')" title="Eliminar">✕</button>'
+      + '</div>'
+      + '</div>';
+  });
+  wrap.innerHTML = html;
+}
+
+function escHtml(s) {
+  return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function condSetText(i, v) { if (quoteConditions[i]) quoteConditions[i].text = v; }
+function condToggleBold(i) { if (quoteConditions[i]) { quoteConditions[i].bold = !quoteConditions[i].bold; renderConditions(); } }
+function condToggleGw(i)   { if (quoteConditions[i]) { quoteConditions[i].onlyGateway = !quoteConditions[i].onlyGateway; renderConditions(); } }
+function condRemove(i)     { quoteConditions.splice(i, 1); renderConditions(); }
+function condMove(i, d) {
+  var j = i + d;
+  if (j < 0 || j >= quoteConditions.length) return;
+  var tmp = quoteConditions[i];
+  quoteConditions[i] = quoteConditions[j];
+  quoteConditions[j] = tmp;
+  renderConditions();
+}
+function condAdd() {
+  quoteConditions.push({ text: '', bold: false, onlyGateway: false });
+  renderConditions();
+  setTimeout(function() {
+    var tas = document.querySelectorAll('#cond-list .cond-text');
+    if (tas.length) tas[tas.length - 1].focus();
+  }, 30);
+}
+function condReset() {
+  if (!confirm('¿Restaurar las condiciones predeterminadas? Se perderán los cambios actuales.')) return;
+  quoteConditions = DEFAULT_CONDITIONS.map(function(c) {
+    return { text: c.text, bold: c.bold, onlyGateway: c.onlyGateway };
+  });
+  renderConditions();
+}
+
 function loadCfg() {
   function gv(id, def) { var e = el(id); return e ? (parseFloat(e.value) || def) : def; }
   function gs(id, def) { var e = el(id); return e ? (e.value || def) : def; }
@@ -2064,6 +2336,9 @@ function loadCfg() {
   cfg.iva         = gv('cfg-iva',           13);
   cfg.currency    = gs('cfg-currency',     '$');
   cfg.gatewayPrice = gv('cfg-gateway-price', 110);
+  var ap = el('cfg-advance-pct');
+  var apv = ap ? parseFloat(ap.value) : NaN;
+  cfg.advancePct = isNaN(apv) ? 60 : Math.max(0, Math.min(100, apv));
 }
 
 function updateSidebar() {
@@ -2272,6 +2547,7 @@ function renderDiagram() {
 // ═══════════════════════════════════════════════════════════
 function openSettings() {
   el('settings-modal').classList.add('open');
+  renderConditions();
   setTimeout(updatePdfPreview, 50);
 }
 function closeSettings() {
@@ -2279,6 +2555,11 @@ function closeSettings() {
 }
 function saveSettings() {
   loadCfg();
+  // Descartar condiciones que quedaron vacías
+  quoteConditions = quoteConditions.filter(function(c) {
+    return String(c.text || '').trim() !== '';
+  });
+  renderConditions();
   updateSidebar();
   renderDOList();
   closeSettings();
@@ -2316,8 +2597,13 @@ function exportSettingsJson() {
       ctPrice:     cfg.ctPrice,
       vtPrice:     cfg.vtPrice,
       iva:         cfg.iva,
-      currency:    cfg.currency
+      currency:    cfg.currency,
+      gatewayPrice: cfg.gatewayPrice,
+      advancePct:  cfg.advancePct
     },
+    conditions: quoteConditions.map(function(c) {
+      return { text: c.text, bold: !!c.bold, onlyGateway: !!c.onlyGateway };
+    }),
     company: {
       name:   (el('cfg-my-company')||{value:''}).value,
       cedula: (el('cfg-my-cedula') ||{value:''}).value,
@@ -2886,20 +3172,42 @@ function buildPDFDoc() {
 
   y += totBoxH + 4;
 
-  // Notes
-  var notesH = state.includeGateway ? 27 : 22;
-  y = pageCheck(y, notesH + 4);
-  fc(ROW1); doc.roundedRect(M,y,CW,notesH,2,2,'F');
-  dc(BRD); doc.roundedRect(M,y,CW,notesH,2,2,'S');
-  tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(7); doc.text('NOTAS Y CONDICIONES',M+4,y+6);
-  tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(6.5);
-  doc.text('\u2022 Esta cotizaci\u00F3n tiene validez de 30 d\u00EDas naturales a partir de la fecha de emisi\u00F3n.',M+4,y+11.5);
-  doc.text('\u2022 Los precios no incluyen instalaci\u00F3n ni puesta en marcha, salvo indicaci\u00F3n contraria.',M+4,y+16);
-  var cn=sym==='$'?'d\u00F3lares americanos (USD)':sym==='\u20A1'?'colones costarricenses (CRC)':'euros (EUR)';
-  doc.text('\u2022 Todos los precios est\u00E1n expresados en '+cn+'.',M+4,y+20.5);
-  if(state.includeGateway){
-    tc(WARN); doc.setFont('helvetica','bold');
-    doc.text('\u2022 La cotizaci\u00F3n no considera la tarjeta SIM ni el servicio de telefon\u00EDa para la puerta de enlace.',M+4,y+25);
+  // Notes — condiciones dinámicas y editables
+  var conds = resolveConditions();
+  if (conds.length) {
+    var CLW = CW - 12;           // ancho útil para el texto (viñeta + márgenes)
+    var LH  = 3.6;               // alto de línea en mm
+    doc.setFontSize(6.5);
+
+    // Pre-calcular el ajuste de línea de cada condición
+    var wrapped = conds.map(function(c) {
+      doc.setFont('helvetica', c.bold ? 'bold' : 'normal');
+      return { lines: doc.splitTextToSize(c.text, CLW), bold: c.bold };
+    });
+
+    var totalLines = wrapped.reduce(function(a, w) { return a + w.lines.length; }, 0);
+    var notesH = 9 + totalLines * LH + 3;
+
+    // Si no cabe completo en lo que resta de página, se pasa a la siguiente
+    y = pageCheck(y, notesH + 4);
+
+    fc(ROW1); doc.roundedRect(M, y, CW, notesH, 2, 2, 'F');
+    dc(BRD);  doc.roundedRect(M, y, CW, notesH, 2, 2, 'S');
+    tc(ACC);  doc.setFont('helvetica','bold'); doc.setFontSize(7);
+    doc.text('NOTAS Y CONDICIONES', M+4, y+6);
+
+    var ly = y + 11.5;
+    doc.setFontSize(6.5);
+    wrapped.forEach(function(w) {
+      tc(w.bold ? WARN : MG);
+      doc.setFont('helvetica', w.bold ? 'bold' : 'normal');
+      w.lines.forEach(function(ln, li) {
+        doc.text((li === 0 ? '\u2022 ' : '  ') + ln, M+4, ly);
+        ly += LH;
+      });
+    });
+
+    y += notesH;
   }
 
   // Footer on last page
@@ -3269,6 +3577,8 @@ function renderPanelDiagram() {
 // ═══════════════════════════════════════════════════════════
 function setQuoteMode(mode) {
   quoteMode = mode;
+  // Al cambiar de modo se reevalúa la versión desde cero
+  state.versionManual = false;
 
   var isTabla = mode === 'tabla';
 
@@ -3566,14 +3876,25 @@ function syncCargasToQuote() {
   var vtList = Object.values(voltageLevels);
   var doCount = cargasState.salidas.filter(function(s){ return s.cotizar; }).length;
 
-  // Tabla mode always forces Full Panel (it drives the config)
-  if (state.version !== 'full') {
-    state.version = 'full';
-    el('ver-basic').classList.remove('selected');
-    el('ver-full').classList.add('selected');
-    el('basic-locked-banner').style.display = 'none';
-    el('dim-module-group') && (el('dim-module-group').style.display = '');
+  // ── Selección de versión según lo que realmente exige la tabla ──
+  var lack = basicShortfall();
+  var versionMsg = '';
+
+  if (lack) {
+    // Las cargas superan la capacidad del equipo base → FULL PANEL obligatorio
+    if (state.version !== 'full') {
+      applyVersionUI('full');
+      versionMsg = ' · FULL PANEL requerido: ' + lack;
+    }
+    state.versionManual = false; // la exigencia técnica manda sobre la elección manual
+  } else if (!state.versionManual) {
+    // Cabe en BASIC y el usuario no forzó nada → mantener/volver a BASIC
+    if (state.version !== 'basic') {
+      applyVersionUI('basic');
+      versionMsg = ' · BASIC (las cargas caben en el equipo base)';
+    }
   }
+  // Si cabe en BASIC pero el usuario eligió FULL a mano, se respeta su elección.
 
   state.voltageCount = Math.max(1, vtList.length);
   state.voltages = vtList.length > 0 ? vtList : [{ value: '', type: 'tri' }];
@@ -3590,7 +3911,7 @@ function syncCargasToQuote() {
   applyBasicLock();
   updateSidebar();
 
-  showJsonBanner('↺ Cotizacion actualizada desde tabla de cargas', true);
+  showJsonBanner('↺ Cotizacion actualizada desde tabla de cargas' + versionMsg, true);
 }
 
 // ── SALIDAS TABLE ──────────────────────────────────────
