@@ -1966,6 +1966,18 @@ function fmtN(n, sym) {
 }
 function el(id) { return document.getElementById(id); }
 
+// Símbolo compatible con las fuentes estándar de jsPDF (WinAnsi): ₡ no existe en ellas
+function pdfSym(sym) {
+  if (sym === '\u20A1') return '\u00A2';   // ₡ → ¢  (alternativa: 'CRC ')
+  return sym || '$';
+}
+// Formato con separador de miles, sin locales (evita espacios Unicode no soportados)
+function fmtPdf(n, sym) {
+  var parts = parseFloat(n || 0).toFixed(2).split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return pdfSym(sym) + parts.join('.');
+}
+
 function toggleDiagramStrip() {
   var body    = el('diagram-strip-body');
   var chevron = el('diagram-chevron');
@@ -3104,13 +3116,13 @@ function buildPDFDoc() {
   var svc2=sub*(cfg.serviceRate/100);
   var iva2=(sub+svc2)*(cfg.iva/100), tot=sub+svc2+iva2;
 
-  var prows=[['Energy Monitor (unidad base)','1',fmtN(bp2,sym),fmtN(bp2,sym)]];
-  if(state.version==='full') prows.push(['M\u00F3dulo Full Panel (expansi\u00F3n)','1',fmtN(mp2,sym),fmtN(mp2,sym)]);
-  if(ch>0)   prows.push(['Chip de medici\u00F3n adicionales (4 entradas/chip)',String(ch),fmtN(cfg.chipPrice,sym),fmtN(cc2,sym)]);
-  if(vtQty2>0) prows.push(['Transductor de voltaje (1 nivel c/u)',String(vtQty2),fmtN(cfg.vtPrice,sym),fmtN(vtc2,sym)]);
-  if(ctQty2>0) prows.push(['Transductor de corriente (3 polos)',String(ctQty2),fmtN(cfg.ctPrice,sym),fmtN(ctc2,sym)]);
-  if(state.digitalOutputs>0) prows.push(['Salida digital (rel\u00E9)',String(state.digitalOutputs),fmtN(cfg.doPrice,sym),fmtN(dc2,sym)]);
-  if(state.includeGateway) prows.push(['Puerta de enlace (gateway)','1',fmtN(cfg.gatewayPrice,sym),fmtN(gw2,sym)]);
+  var prows=[['Energy Monitor (unidad base)','1',fmtPdf(bp2,sym),fmtPdf(bp2,sym)]];
+  if(state.version==='full') prows.push(['M\u00F3dulo Full Panel (expansi\u00F3n)','1',fmtPdf(mp2,sym),fmtPdf(mp2,sym)]);
+  if(ch>0)   prows.push(['Chip de medici\u00F3n adicionales (4 entradas/chip)',String(ch),fmtPdf(cfg.chipPrice,sym),fmtPdf(cc2,sym)]);
+  if(vtQty2>0) prows.push(['Transductor de voltaje (1 nivel c/u)',String(vtQty2),fmtPdf(cfg.vtPrice,sym),fmtPdf(vtc2,sym)]);
+  if(ctQty2>0) prows.push(['Transductor de corriente (3 polos)',String(ctQty2),fmtPdf(cfg.ctPrice,sym),fmtPdf(ctc2,sym)]);
+  if(state.digitalOutputs>0) prows.push(['Salida digital (rel\u00E9)',String(state.digitalOutputs),fmtPdf(cfg.doPrice,sym),fmtPdf(dc2,sym)]);
+  if(state.includeGateway) prows.push(['Puerta de enlace (gateway)','1',fmtPdf(cfg.gatewayPrice,sym),fmtPdf(gw2,sym)]);
 
   // Table header
   y = pageCheck(y, 7);
@@ -3145,21 +3157,21 @@ function buildPDFDoc() {
   tc(MG); doc.setFont('helvetica','normal'); doc.setFontSize(8);
   doc.text('Subtotal (hardware):',tx+5,lineY);
   tc(LG); doc.setFont('helvetica','bold');
-  doc.text(fmtN(sub,sym),tx+tw-5,lineY,{align:'right'});
+  doc.text(fmtPdf(sub,sym),tx+tw-5,lineY,{align:'right'});
   lineY += 8;
 
   if (cfg.serviceRate > 0) {
     tc(MG); doc.setFont('helvetica','normal');
     doc.text('Config. plataforma ('+cfg.serviceRate+'%):',tx+5,lineY);
     tc(LG); doc.setFont('helvetica','bold');
-    doc.text(fmtN(svc2,sym),tx+tw-5,lineY,{align:'right'});
+    doc.text(fmtPdf(svc2,sym),tx+tw-5,lineY,{align:'right'});
     lineY += 8;
   }
 
   tc(MG); doc.setFont('helvetica','normal');
   doc.text('IVA ('+cfg.iva+'%):',tx+5,lineY);
   tc(LG); doc.setFont('helvetica','bold');
-  doc.text(fmtN(iva2,sym),tx+tw-5,lineY,{align:'right'});
+  doc.text(fmtPdf(iva2,sym),tx+tw-5,lineY,{align:'right'});
   lineY += 5;
 
   dc(BRD); doc.setLineWidth(0.4);
@@ -3168,7 +3180,7 @@ function buildPDFDoc() {
 
   tc(ACC); doc.setFont('helvetica','bold'); doc.setFontSize(10);
   doc.text('TOTAL:',tx+5,lineY);
-  doc.text(fmtN(tot,sym),tx+tw-5,lineY,{align:'right'});
+  doc.text(fmtPdf(tot,sym),tx+tw-5,lineY,{align:'right'});
 
   y += totBoxH + 4;
 
