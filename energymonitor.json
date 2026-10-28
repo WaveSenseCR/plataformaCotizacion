@@ -7,6 +7,7 @@
     "doPrice": 10000,
     "ctPrice": 30000,
     "vtPrice": 30000,
+    "gatewayPrice": 35000,
     "iva": 13,
     "currency": "₡"
   },
