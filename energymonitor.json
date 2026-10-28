@@ -1,14 +1,14 @@
 {
   "lockSettings": true,
   "prices": {
-    "basePrice": 700,
-    "modulePrice": 80,
-    "chipPrice": 15,
-    "doPrice": 20,
-    "ctPrice": 60,
-    "vtPrice": 60,
+    "basePrice": 350000,
+    "modulePrice": 40000,
+    "chipPrice": 7500,
+    "doPrice": 10000,
+    "ctPrice": 30000,
+    "vtPrice": 30000,
     "iva": 13,
-    "currency": "$"
+    "currency": "₡"
   },
   "company": {
     "name": "EPSILON WATER TECHNOLOGY",
